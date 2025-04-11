@@ -51,11 +51,14 @@
 				<artifactId>spring-boot-starter-data-jpa</artifactId>
 			</dependency>
 
-			<!-- Database Driver (example for MySQL) -->
 			<dependency>
-				<groupId>mysql</groupId>
-				<artifactId>mysql-connector-java</artifactId>
-				<version>8.0.33</version> <!-- Use latest stable version -->
+				<groupId>org.postgresql</groupId>
+				<artifactId>postgresql</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>me.paulschwarz</groupId>
+				<artifactId>spring-dotenv</artifactId>
+				<version>4.0.0</version>
 			</dependency>
 
 			<!-- Optional: For testing with in-memory database -->
