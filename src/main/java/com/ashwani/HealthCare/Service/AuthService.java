@@ -4,7 +4,9 @@ import com.ashwani.HealthCare.Entity.UserEntity;
 import com.ashwani.HealthCare.Repository.UserRepository;
 import com.ashwani.HealthCare.Utility.JWTUtility;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AuthService {
     private final UserRepository userRepository;
     private final JWTUtility jwtUtility;
