@@ -24,6 +24,10 @@ public class AuthService {
             throw new RuntimeException("Email already in use");
         }
 
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new RuntimeException("Username does already exist");
+        }
+
         // Hash password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
