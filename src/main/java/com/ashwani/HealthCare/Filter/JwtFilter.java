@@ -21,8 +21,7 @@ public class JwtFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         // Skip filter for login/register endpoints
-        if (httpRequest.getServletPath().startsWith("/api/auth/") ||
-                httpRequest.getServletPath().equals("/api/users/register")) {
+        if (httpRequest.getServletPath().startsWith("/api/auth/")) {
             chain.doFilter(request, response);
             return;
         }

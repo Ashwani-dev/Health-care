@@ -1,23 +1,22 @@
 package com.ashwani.HealthCare.Service;
 
-import com.ashwani.HealthCare.Entity.UserEntity;
-import com.ashwani.HealthCare.Repository.UserRepository;
+import com.ashwani.HealthCare.Repository.DoctorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UserService {
+public class DoctorService {
 
     @Autowired
-    private final UserRepository userRepository;
+    private final DoctorRepository doctorRepository;
 
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository,
-                       BCryptPasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
+    public DoctorService(DoctorRepository doctorRepository,
+                         BCryptPasswordEncoder passwordEncoder) {
+        this.doctorRepository = doctorRepository;
         this.passwordEncoder = passwordEncoder;
     }
 }

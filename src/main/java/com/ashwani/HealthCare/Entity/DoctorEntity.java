@@ -1,18 +1,15 @@
 package com.ashwani.HealthCare.Entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "users")
+@Table(name = "doctors")
 @Setter
 @Getter
-public class UserEntity {
+public class DoctorEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,6 +40,10 @@ public class UserEntity {
     private String contact_number;
 
     @Column(nullable = false)
-    @NotBlank(message = "Address is required")
-    private String address;
+    @NotNull(message = "Experience is required")
+    private int medical_experience;
+
+    @Column(nullable = false)
+    @NotBlank(message = "Area of specialization is required")
+    private String specialization;
 }
