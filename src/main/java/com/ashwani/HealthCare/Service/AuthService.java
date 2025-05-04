@@ -1,56 +1,56 @@
 package com.ashwani.HealthCare.Service;
 
 import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.UserEntity;
+import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
-import com.ashwani.HealthCare.Repository.UserRepository;
+import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Utility.JWTUtility;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-    private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final JWTUtility jwtUtility;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, DoctorRepository doctorRepository, JWTUtility jwtUtility) {
-        this.userRepository = userRepository;
+    public AuthService(PatientRepository patientRepository, DoctorRepository doctorRepository, JWTUtility jwtUtility) {
+        this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.jwtUtility = jwtUtility;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    public String registerUser(UserEntity user) {
+    public String registerPatient(PatientEntity patient) {
         // Check if user exists
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (patientRepository.findByEmail(patient.getEmail()).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
 
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+        if (patientRepository.findByUsername(patient.getUsername()).isPresent()) {
             throw new RuntimeException("Username does already exist");
         }
 
         // Hash password
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        patient.setPassword(passwordEncoder.encode(patient.getPassword()));
 
         // Save user
-        userRepository.save(user);
+        patientRepository.save(patient);
 
         // Generate token
-        return jwtUtility.generateToken(user.getId().toString());
+        return jwtUtility.generateToken(patient.getId().toString());
     }
 
 
-    public String loginUser(String email, String password) {
-        UserEntity user = userRepository.findByEmail(email)
+    public String loginPatient(String email, String password) {
+        PatientEntity patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, patient.getPassword())) {
             throw new RuntimeException("Invalid credentials");
         }
-        return jwtUtility.generateToken(user.getId().toString());
+        return jwtUtility.generateToken(patient.getId().toString());
     }
 
     public String registerDoctor(DoctorEntity doctor) {

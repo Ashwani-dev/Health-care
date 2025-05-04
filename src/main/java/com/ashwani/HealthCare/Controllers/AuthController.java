@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.UserEntity;
+import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,15 +14,15 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/user/register")
-    public String registerUser(@RequestBody UserEntity user){
-        return authService.registerUser(user);
+    @PostMapping("/patient/register")
+    public String registerPatient(@RequestBody PatientEntity patient){
+        return authService.registerPatient(patient);
     }
 
 
-    @PostMapping("/user/login")
-    public String loginUser(@RequestParam String email, String password){
-        return authService.loginUser(email, password);
+    @PostMapping("/patient/login")
+    public String loginPatient(@RequestParam String email, String password){
+        return authService.loginPatient(email, password);
     }
 
     @PostMapping("/doctor/register")

@@ -1,0 +1,60 @@
+package com.ashwani.HealthCare.Controllers;
+
+import com.ashwani.HealthCare.DTO.BookAppointmentRequest;
+import com.ashwani.HealthCare.Entity.AppointmentEntity;
+import com.ashwani.HealthCare.Service.AppointmentService;
+import com.ashwani.HealthCare.Utility.TimeSlot;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping("api/appointments")
+public class AppointmentController {
+    @Autowired
+    private AppointmentService appointmentService;
+
+    @PostMapping("/book")
+    public ResponseEntity<?> bookAppointment(@RequestBody BookAppointmentRequest request){
+        try {
+            AppointmentEntity appointment = appointmentService.bookAppointment(
+                    request.getPatientId(),
+                    request.getDoctorId(),
+                    request.getDate(),
+                    request.getStartTime(),
+                    request.getReason()
+            );
+            return ResponseEntity.ok(appointment);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("doctor/{doctorId}")
+    public ResponseEntity<List<AppointmentEntity>> getDoctorAppointments(
+            @PathVariable Long doctorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
+                    date
+            ){
+        if(date == null){
+            date = LocalDate.now();
+        }
+
+        List<AppointmentEntity> appointments = appointmentService.getDoctorAppointments(doctorId, date);
+
+        return ResponseEntity.ok(appointments);
+    }
+
+    @GetMapping("availability/{doctorId}")
+    public ResponseEntity<List<TimeSlot>> getAvailableSlots(
+            @PathVariable Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        List<TimeSlot> slots = appointmentService.getAvailableSlots(doctorId, date);
+        return ResponseEntity.ok(slots);
+    }
+}
