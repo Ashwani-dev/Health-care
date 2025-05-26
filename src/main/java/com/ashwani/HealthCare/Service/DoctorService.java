@@ -15,13 +15,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DoctorService {
 
-    @Autowired
     private final DoctorRepository doctorRepository;
-
-    @Autowired
     private final BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
     private final ModelMapper modelMapper;
 
     public List<DoctorDto> getAllDoctors(){

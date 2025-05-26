@@ -1,5 +1,6 @@
 package com.ashwani.HealthCare.Service;
 
+import com.ashwani.HealthCare.DTO.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Entity.DoctorAvailability;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
@@ -11,12 +12,14 @@ import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AppointmentService {
@@ -32,6 +35,25 @@ public class AppointmentService {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private EmailService emailService;
+
+    private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
+        return new PatientAppointmentResponse(
+                appointment.getPatient().getId(),
+                appointment.getPatient().getFull_name(),
+                appointment.getDoctor().getId(),
+                appointment.getDoctor().getFull_name(),
+                appointment.getAppointmentDate(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getStatus(),
+                appointment.getDescription(),
+                appointment.getCreatedAt()
+        );
+    }
+
+    @Transactional
     public AppointmentEntity bookAppointment(Long patientId, Long doctorId, LocalDate date,
                                              LocalTime startTime, String description) throws Exception {
         PatientEntity patient = patientRepository.findById(patientId)
@@ -50,7 +72,7 @@ public class AppointmentService {
         List<DoctorAvailability> availabilities = doctorAvailabilityRepository.findByDoctorAndDayOfWeek(doctor, dayOfWeek);
 
         boolean isAvailable = availabilities.stream()
-                .anyMatch(av -> !av.getIsAvailable() &&
+                .anyMatch(av -> av.getIsAvailable() &&
                         startTime.isAfter(av.getStartTime()) &&
                         startTime.isBefore(av.getEndTime()));
 
@@ -70,13 +92,18 @@ public class AppointmentService {
         appointment.setStatus("SCHEDULED");
         appointment.setDescription(description);
 
+        emailService.sendAppointmentConfirmation(doctor, patient, startTime, date);
+
         return appointmentRepository.save(appointment);
     }
 
-    public List<AppointmentEntity> getPatientAppointments(Long patientId) {
+    public List<PatientAppointmentResponse> getPatientAppointments(Long patientId) {
         PatientEntity patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
-        return appointmentRepository.findByPatient(patient);
+        List<AppointmentEntity> appointments = appointmentRepository.findByPatient(patient);
+        return appointments.stream()
+                .map(this ::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     public List<AppointmentEntity> getDoctorAppointments(Long doctorId, LocalDate date) {

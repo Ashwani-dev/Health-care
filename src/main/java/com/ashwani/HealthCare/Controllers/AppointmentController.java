@@ -34,7 +34,7 @@ public class AppointmentController {
         }
     }
 
-    @GetMapping("doctor/{doctorId}")
+    @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<List<AppointmentEntity>> getDoctorAppointments(
             @PathVariable Long doctorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate

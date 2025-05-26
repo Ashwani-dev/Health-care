@@ -1,6 +1,7 @@
 package com.ashwani.HealthCare.Controllers;
 
 
+import com.ashwani.HealthCare.DTO.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,8 +25,8 @@ public class PatientController {
         return "Authenticated user ID: " + userId;
     }
 
-    @GetMapping("patient/{patientId}")
-    public ResponseEntity<List<AppointmentEntity>> getPatientAppointments(
+    @GetMapping("/{patientId}")
+    public ResponseEntity<List<PatientAppointmentResponse>> getPatientAppointments(
             @PathVariable Long patientId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
                     date
@@ -34,7 +35,7 @@ public class PatientController {
             date = LocalDate.now();
         }
 
-        List<AppointmentEntity> appointments = appointmentService.getPatientAppointments(patientId);
+        List<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(patientId);
 
         return ResponseEntity.ok(appointments);
     }
