@@ -14,23 +14,27 @@ public class AuthController {
         this.authService = authService;
     }
 
+//    For patient registration
     @PostMapping("/patient/register")
     public String registerPatient(@RequestBody PatientEntity patient){
         return authService.registerPatient(patient);
     }
 
 
+//    For patient login
     @PostMapping("/patient/login")
     public String loginPatient(@RequestParam String email, String password){
         return authService.loginPatient(email, password);
     }
 
+//    For doctor registration
     @PostMapping("/doctor/register")
     public String registerDoctor(@RequestBody DoctorEntity doctor){
         return authService.registerDoctor(doctor);
     }
 
 
+//    For doctor login
     @PostMapping("/doctor/login")
     public String loginDoctor(@RequestParam String email, String password){
         return authService.loginDoctor(email, password);

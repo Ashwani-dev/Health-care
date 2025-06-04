@@ -2,10 +2,14 @@ package com.ashwani.HealthCare.Service;
 
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Entity.PatientEntity;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,33 +17,58 @@ import java.time.LocalTime;
 @Service
 public class EmailService {
     private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;
+        this.templateEngine = templateEngine;
     }
 
-    private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient, LocalTime time, LocalDate date) {
-        String subject = "Appointment Confirmation";
-        String text = String.format("Dear %s,\n\nYour appointment with Dr. %s is scheduled at %s on %s",
-                patient.getFull_name(), doctor.getFull_name(), time, date);
-        sendEmail(patient.getEmail(), subject, text);
+    private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient,
+                                  LocalTime time, LocalDate date) {
+        try {
+            Context context = new Context();
+            context.setVariable("patientName", patient.getFull_name());
+            context.setVariable("doctorName", doctor.getFull_name());
+            context.setVariable("date", date);
+            context.setVariable("time", time);
+            context.setVariable("cancelLink", "https://yourclinic.com/cancel?token=12345");
+
+            String htmlContent = templateEngine.process("email/patient-appointment", context);
+            sendEmail(patient.getEmail(), "Appointment Confirmation", htmlContent);
+        } catch (MessagingException e) {
+            // Handle error
+        }
     }
 
-    private void sendDoctorEmail(DoctorEntity doctor, PatientEntity patient, LocalTime time, LocalDate date) {
-        String subject = "New Appointment";
-        String text = String.format("Dr. %s,\n\nNew appointment with %s at %s on %s\nPatient email: %s",
-                doctor.getFull_name(), patient.getFull_name(), time, date, patient.getEmail());
-        sendEmail(doctor.getEmail(), subject, text);
+    private void sendDoctorEmail(DoctorEntity doctor, PatientEntity patient,
+                                 LocalTime time, LocalDate date) {
+        try {
+            Context context = new Context();
+            context.setVariable("doctorName", doctor.getFull_name());
+            context.setVariable("patientName", patient.getFull_name());
+            context.setVariable("patientEmail", patient.getEmail());
+            context.setVariable("date", date);
+            context.setVariable("time", time);
+
+            String htmlContent = templateEngine.process("email/doctor-notification", context);
+            sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
+        } catch (MessagingException e) {
+            // Handle error
+        }
     }
 
-    private void sendEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
+    private void sendEmail(String to, String subject, String htmlContent)
+            throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true); // true = isHTML
+
         mailSender.send(message);
     }
-
     @Async
     public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date){
         sendPatientEmail(doctor, patient, appointmentTime, date);

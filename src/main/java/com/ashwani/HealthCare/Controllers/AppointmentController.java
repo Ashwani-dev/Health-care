@@ -1,6 +1,7 @@
 package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.BookAppointmentRequest;
+import com.ashwani.HealthCare.DTO.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
@@ -18,6 +19,7 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
+//    For booking appointment with doctor by patient
     @PostMapping("/book")
     public ResponseEntity<?> bookAppointment(@RequestBody BookAppointmentRequest request){
         try {
@@ -34,8 +36,9 @@ public class AppointmentController {
         }
     }
 
+//    Doctor can access all of his/her scheduled appointment
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<AppointmentEntity>> getDoctorAppointments(
+    public ResponseEntity<List<PatientAppointmentResponse>> getDoctorAppointments(
             @PathVariable Long doctorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
                     date
@@ -44,7 +47,23 @@ public class AppointmentController {
             date = LocalDate.now();
         }
 
-        List<AppointmentEntity> appointments = appointmentService.getDoctorAppointments(doctorId, date);
+        List<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(doctorId, date);
+
+        return ResponseEntity.ok(appointments);
+    }
+
+//    Patient can access all of his/her scheduled appointment
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<PatientAppointmentResponse>> getPatientAppointments(
+            @PathVariable Long patientId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
+                    date
+    ){
+        if(date == null){
+            date = LocalDate.now();
+        }
+
+        List<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(patientId);
 
         return ResponseEntity.ok(appointments);
     }

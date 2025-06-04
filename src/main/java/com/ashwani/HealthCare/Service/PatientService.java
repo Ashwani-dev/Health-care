@@ -1,6 +1,5 @@
 package com.ashwani.HealthCare.Service;
 
-import com.ashwani.HealthCare.DTO.DoctorDto;
 import com.ashwani.HealthCare.Repository.AppointmentRepository;
 import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
 import com.ashwani.HealthCare.Repository.DoctorRepository;

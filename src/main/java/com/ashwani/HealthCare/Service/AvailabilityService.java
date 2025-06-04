@@ -34,9 +34,6 @@ public class AvailabilityService {
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        // Clear existing availability for this doctor
-        availabilityRepository.deleteByDoctor(doctor);
-
         return requests.stream()
                 .map(request -> {
                     DoctorAvailability availability = modelMapper.map(request, DoctorAvailability.class);

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <!-- Similar styling as patient template -->
+</head>
+<body>
+<h1 class="header">New Appointment Scheduled</h1>
+
+<p>Dr. <span th:text="${doctorName}">Smith</span>,</p>
+
+<div class="appointment-details">
+  <p>You have a new appointment:</p>
+  <p><strong>Patient:</strong> <span th:text="${patientName}">John Doe</span></p>
+  <p><strong>Date:</strong> <span th:text="${#temporals.format(date, 'MMMM dd, yyyy')}">January 01, 2023</span></p>
+  <p><strong>Time:</strong> <span th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</span></p>
+  <p><strong>Patient Email:</strong> <span th:text="${patientEmail}">john@example.com</span></p>
+</div>
+
+<div class="footer">
+  <p>This appointment has been added to your schedule.</p>
+</div>
+</body>
+</html>

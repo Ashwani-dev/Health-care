@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Appointment Confirmation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .appointment-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<h1 class="header">Appointment Confirmation</h1>
+
+<p>Dear <span th:text="${patientName}">Patient</span>,</p>
+
+<div class="appointment-details">
+    <p>Your appointment has been successfully scheduled:</p>
+    <p><strong>Doctor:</strong> <span th:text="${doctorName}">Dr. Smith</span></p>
+    <p><strong>Date:</strong> <span th:text="${#temporals.format(date, 'MMMM dd, yyyy')}">January 01, 2023</span></p>
+    <p><strong>Time:</strong> <span th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</span></p>
+</div>
+
+<p>Please arrive 15 minutes before your scheduled time.</p>
+
+<a th:href="${cancelLink}" class="button">Cancel or Reschedule</a>
+
+<div class="footer">
+    <p>Best regards,<br>The Healthcare Team</p>
+    <p>If you didn't request this appointment, please contact us immediately.</p>
+</div>
+</body>
+</html>

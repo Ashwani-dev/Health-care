@@ -106,10 +106,13 @@ public class AppointmentService {
                 .collect(Collectors.toList());
     }
 
-    public List<AppointmentEntity> getDoctorAppointments(Long doctorId, LocalDate date) {
+    public List<PatientAppointmentResponse> getDoctorAppointments(Long doctorId, LocalDate date) {
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        return appointmentRepository.findByDoctorAndAppointmentDate(doctor, date);
+        List<AppointmentEntity> appointments = appointmentRepository.findByDoctorAndAppointmentDate(doctor, date);
+        return appointments.stream()
+                .map(this ::convertToResponse)
+                .collect(Collectors.toList());
     }
 
     public List<TimeSlot> getAvailableSlots(Long doctorId, LocalDate date) {

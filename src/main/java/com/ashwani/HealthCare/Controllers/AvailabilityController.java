@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/availability")
 @RequiredArgsConstructor
 public class AvailabilityController {
     private final AvailabilityService availabilityService;
+
     @GetMapping("/me")
     public String getCurrentUser(Principal principal) {
         if (principal == null) {
@@ -36,38 +36,14 @@ public class AvailabilityController {
         }
 
         List<AvailabilityResponseDto> availabilities = availabilityService.setAvailability(doctorId, requests);
-
-        List<AvailabilityResponseDto> responses = availabilities.stream()
-                .map(av-> new AvailabilityResponseDto(
-                        av.getId(),
-                        av.getDoctorId(),
-                        av.getDayOfWeek(),
-                        av.getStartTime(),
-                        av.getEndTime(),
-                        av.isAvailable()
-                ))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(availabilities);
     }
 
     @GetMapping("/{doctorId}")
     public ResponseEntity<List<AvailabilityResponseDto>> getAvailability(
             @PathVariable Long doctorId) {
         List<AvailabilityResponseDto> availabilities = availabilityService.getDoctorAvailability(doctorId);
-
-        List<AvailabilityResponseDto> responses = availabilities.stream()
-                .map(av -> new AvailabilityResponseDto(
-                        av.getId(),
-                        av.getDoctorId(),
-                        av.getDayOfWeek(),
-                        av.getStartTime(),
-                        av.getEndTime(),
-                        av.isAvailable()
-                ))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(availabilities);
     }
 
     @DeleteMapping("/{doctorId}/{slotId}")
