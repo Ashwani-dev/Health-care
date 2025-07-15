@@ -42,4 +42,39 @@ public class AppointmentEntity {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @JoinColumn(name = "cancelled_by_user_id")
+    private Long cancelledBy;
+
+    public boolean belongsToPatient(Long patientId) {
+        return this.patient != null && this.patient.getId().equals(patientId);
+    }
+
+    public boolean isPastCancellationDeadline() {
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                this.appointmentDate,
+                this.startTime
+        );
+        // 24h before appointment
+        return LocalDateTime.now()
+                .isAfter(appointmentDateTime.minusHours(24));
+    }
+
+    /**
+     * Marks the appointment as cancelled with timestamp
+     * @param cancelledByUser The user who initiated cancellation
+     * @throws IllegalStateException if already cancelled
+     */
+    public void cancel(Long cancelledByUser) {
+        if ("CANCELLED".equals(this.status)) {
+            throw new IllegalStateException("Appointment already cancelled");
+        }
+
+        this.status = "CANCELLED";
+        this.cancelledAt = LocalDateTime.now();
+        this.cancelledBy = cancelledByUser;
+    }
 }

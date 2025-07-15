@@ -1,72 +1,92 @@
 package com.ashwani.HealthCare.Filter;
 import com.ashwani.HealthCare.Utility.JWTUtility;
-import jakarta.servlet.*;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import java.io.IOException;
-import java.security.Principal;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
-public class JwtFilter implements Filter {
+@RequiredArgsConstructor
+public class JwtFilter extends OncePerRequestFilter {
+
     private final JWTUtility jwtUtility;
 
-    public JwtFilter(JWTUtility jwtUtility) {
-        this.jwtUtility = jwtUtility;
-    }
-
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-        // Skip filter for auth endpoints
-        if (httpRequest.getServletPath().startsWith("/api/auth/")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Get token from header
-        String token = httpRequest.getHeader("Authorization");
-        if (token == null || !token.startsWith("Bearer ")) {
-            sendUnauthorizedError(httpResponse, "Missing or invalid token");
-            return;
-        }
-
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
         try {
-            String userId = jwtUtility.validateTokenAndGetUserId(token.substring(7));
-            httpRequest.setAttribute("userId", userId);
-            // Create authenticated request
-            AuthenticatedRequest authenticatedRequest = new AuthenticatedRequest(httpRequest, userId);
+            String jwt = getJwtFromRequest(request);
 
-            // Continue with the authenticated request
-            chain.doFilter(authenticatedRequest, response);
-        } catch (RuntimeException e) {
-            sendUnauthorizedError(httpResponse, "Invalid token: " + e.getMessage());
+            if (jwt != null) {
+                // Validate token and extract claims once
+                Claims claims = jwtUtility.validateToken(jwt);
+                String userId = claims.getSubject();
+                String role = claims.get("role", String.class);
+
+                /*
+                // Validate role against endpoint
+                if (isDoctorEndpoint(request) && !"DOCTOR".equals(role)) {
+                    throw new AccessDeniedException("Doctor access required");
+                }
+
+                if (isPatientEndpoint(request) && !"PATIENT".equals(role)) {
+                    throw new AccessDeniedException("Patient access required");
+                }
+                 */
+
+                UserDetails userDetails = createUserDetails(userId, role);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (Exception ex) {
+            SecurityContextHolder.clearContext();
+            throw new ServletException("JWT validation failed", ex);
         }
+
+        filterChain.doFilter(request, response);
     }
 
-    private void sendUnauthorizedError(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getWriter().write(message);
-        response.getWriter().flush();
+    private boolean isDoctorEndpoint(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/doctor/");
     }
 
-    // Custom HttpServletRequestWrapper to provide Principal
-    private static class AuthenticatedRequest extends HttpServletRequestWrapper {
-        private final String userId;
+    private boolean isPatientEndpoint(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/patient/");
+    }
 
-        public AuthenticatedRequest(HttpServletRequest request, String userId) {
-            super(request);
-            this.userId = userId;
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
         }
+        return null;
+    }
 
-        @Override
-        public Principal getUserPrincipal() {
-            return () -> userId; // Simple Principal implementation
-        }
+    private UserDetails createUserDetails(String userId, String role) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+
+        return new org.springframework.security.core.userdetails.User(
+                userId, "", authorities);
     }
 }

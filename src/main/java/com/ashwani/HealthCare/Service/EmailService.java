@@ -42,7 +42,7 @@ public class EmailService {
     }
 
     private void sendDoctorEmail(DoctorEntity doctor, PatientEntity patient,
-                                 LocalTime time, LocalDate date) {
+                                 LocalTime time, LocalDate date, String description) {
         try {
             Context context = new Context();
             context.setVariable("doctorName", doctor.getFull_name());
@@ -50,6 +50,7 @@ public class EmailService {
             context.setVariable("patientEmail", patient.getEmail());
             context.setVariable("date", date);
             context.setVariable("time", time);
+            context.setVariable("description", description);
 
             String htmlContent = templateEngine.process("email/doctor-notification", context);
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
@@ -70,8 +71,8 @@ public class EmailService {
         mailSender.send(message);
     }
     @Async
-    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date){
+    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date, String description){
         sendPatientEmail(doctor, patient, appointmentTime, date);
-        sendDoctorEmail(doctor, patient, appointmentTime, date);
+        sendDoctorEmail(doctor, patient, appointmentTime, date, description);
     }
 }

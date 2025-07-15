@@ -10,8 +10,10 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/appointments")
@@ -33,6 +35,24 @@ public class AppointmentController {
             return ResponseEntity.ok(appointment);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+//    For deleting appointment with doctor by patient
+    @DeleteMapping("/{appointmentId}")
+    public ResponseEntity<?> cancelAppointment(@PathVariable Long appointmentId, Principal principal) {
+        try {
+            Long userId = Long.parseLong(principal.getName());
+            appointmentService.cancelAppointment(appointmentId, userId);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Appointment cancelled successfully",
+                    "appointmentId", appointmentId
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Appointment already cancelled",
+                    "appointmentId", appointmentId,
+                    "status", "CANCELLED"
+            ));
         }
     }
 

@@ -1,35 +1,40 @@
 package com.ashwani.HealthCare.Service;
 
 import com.ashwani.HealthCare.DTO.DoctorDto;
+import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
+import com.ashwani.HealthCare.specifications.DoctorSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final ModelMapper modelMapper;
 
-    public List<DoctorDto> getAllDoctors(){
-        return doctorRepository.findAll()
-                .stream()
-                .map(doctor-> modelMapper.map(doctor, DoctorDto.class))
-                .collect(Collectors.toList());
+    private DoctorDto convertToDto(DoctorEntity doctor) {
+        return modelMapper.map(doctor, DoctorDto.class);
     }
 
-    public List<DoctorDto> searchDoctors(String specialization){
-        return doctorRepository.findBySpecializationContainingIgnoreCase(specialization)
+    private Specification<DoctorEntity> buildSearchSpecification(String specialization, String name) {
+        return Specification.where(DoctorSpecifications.hasSpecialization(specialization))
+                .and(DoctorSpecifications.nameContains(name));
+    }
+
+    public List<DoctorDto> searchDoctors(String specialization, String name) {
+        Specification<DoctorEntity> spec = buildSearchSpecification(specialization, name);
+        return doctorRepository.findAll(spec)
                 .stream()
-                .map(doctor-> modelMapper.map(doctor, DoctorDto.class))
-                .collect((Collectors.toList()));
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 }

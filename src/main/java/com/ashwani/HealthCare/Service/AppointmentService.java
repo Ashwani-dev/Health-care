@@ -11,9 +11,11 @@ import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -92,7 +94,7 @@ public class AppointmentService {
         appointment.setStatus("SCHEDULED");
         appointment.setDescription(description);
 
-        emailService.sendAppointmentConfirmation(doctor, patient, startTime, date);
+        emailService.sendAppointmentConfirmation(doctor, patient, startTime, date, description);
 
         return appointmentRepository.save(appointment);
     }
@@ -109,7 +111,7 @@ public class AppointmentService {
     public List<PatientAppointmentResponse> getDoctorAppointments(Long doctorId, LocalDate date) {
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        List<AppointmentEntity> appointments = appointmentRepository.findByDoctorAndAppointmentDate(doctor, date);
+        List<AppointmentEntity> appointments = appointmentRepository.findByDoctor(doctor);
         return appointments.stream()
                 .map(this ::convertToResponse)
                 .collect(Collectors.toList());
@@ -146,5 +148,24 @@ public class AppointmentService {
             }
         }
         return availableSlots;
+    }
+
+    @Transactional
+    public void cancelAppointment(Long appointmentId, Long userId) {
+        AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        vaildateCancellation(appointment, userId);
+        appointment.cancel(userId);
+        appointmentRepository.save(appointment);
+    }
+
+    private void vaildateCancellation(AppointmentEntity appointment, Long userId) {
+        if (!appointment.belongsToPatient(userId)){
+            throw new AccessDeniedException("Not your appointment");
+        }
+        if (appointment.isPastCancellationDeadline()){
+            throw new RuntimeException("24-hour cancellation required");
+        }
     }
 }

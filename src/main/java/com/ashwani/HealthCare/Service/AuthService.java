@@ -1,5 +1,6 @@
 package com.ashwani.HealthCare.Service;
 
+import com.ashwani.HealthCare.DTO.AuthResponse;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
@@ -36,21 +37,23 @@ public class AuthService {
         patient.setPassword(passwordEncoder.encode(patient.getPassword()));
 
         // Save user
-        patientRepository.save(patient);
+        PatientEntity savedPatient = patientRepository.save(patient);
 
         // Generate token
-        return jwtUtility.generateToken(patient.getId().toString());
+        return jwtUtility.generateToken(savedPatient.getId().toString(), "PATIENT");
     }
 
 
-    public String loginPatient(String email, String password) {
+    public AuthResponse loginPatient(String email, String password) {
         PatientEntity patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(password, patient.getPassword())) {
             throw new RuntimeException("Invalid credentials");
         }
-        return jwtUtility.generateToken(patient.getId().toString());
+        String token = jwtUtility.generateToken(patient.getId().toString(), "PATIENT");
+
+        return new AuthResponse(true, token, "PATIENT", patient.getId());
     }
 
     public String registerDoctor(DoctorEntity doctor) {
@@ -62,17 +65,21 @@ public class AuthService {
             throw new RuntimeException("Username does already exist");
         }
         doctor.setPassword(passwordEncoder.encode(doctor.getPassword()));
-        doctorRepository.save(doctor);
-        return jwtUtility.generateToken(doctor.getId().toString());
+
+        DoctorEntity savedDoctor = doctorRepository.save(doctor);
+
+        return jwtUtility.generateToken(savedDoctor.getId().toString(), "DOCTOR");
     }
 
-    public String loginDoctor(String email, String password) {
+    public AuthResponse loginDoctor(String email, String password) {
         DoctorEntity doctor = doctorRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if(!passwordEncoder.matches(password, doctor.getPassword())){
             throw new RuntimeException("Invalid Credentials");
         }
-        return jwtUtility.generateToken(doctor.getId().toString());
+        String token = jwtUtility.generateToken(doctor.getId().toString(), "DOCTOR");
+
+        return new AuthResponse(true, token, "DOCTOR", doctor.getId());
     }
 }

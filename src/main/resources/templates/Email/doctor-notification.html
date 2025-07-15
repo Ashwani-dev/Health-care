@@ -13,7 +13,8 @@
   <p><strong>Patient:</strong> <span th:text="${patientName}">John Doe</span></p>
   <p><strong>Date:</strong> <span th:text="${#temporals.format(date, 'MMMM dd, yyyy')}">January 01, 2023</span></p>
   <p><strong>Time:</strong> <span th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</span></p>
-  <p><strong>Patient Email:</strong> <span th:text="${patientEmail}">john@example.com</span></p>
+  <p><strong>Patient Email:</strong> <span th:text="${patientEmail}">Not Available</span></p>
+  <p><strong>Problem description:</strong> <span th:text="${description}">Not comfortable to share problem on mail</span></p>
 </div>
 
 <div class="footer">
