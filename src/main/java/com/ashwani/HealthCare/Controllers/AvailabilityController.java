@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Controllers;
 
-import com.ashwani.HealthCare.DTO.AvailabilityRequestDto;
-import com.ashwani.HealthCare.DTO.AvailabilityResponseDto;
+import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
+import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;
 import com.ashwani.HealthCare.Service.AvailabilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

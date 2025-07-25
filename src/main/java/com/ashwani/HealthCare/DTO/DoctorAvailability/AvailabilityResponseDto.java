@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.DTO;
+package com.ashwani.HealthCare.DTO.DoctorAvailability;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

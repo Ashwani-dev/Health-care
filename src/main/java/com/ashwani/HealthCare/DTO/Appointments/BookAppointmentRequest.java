@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.DTO;
+package com.ashwani.HealthCare.DTO.Appointments;
 
 import lombok.Getter;
 import lombok.Setter;

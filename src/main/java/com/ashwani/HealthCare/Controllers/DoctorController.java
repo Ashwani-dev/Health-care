@@ -1,21 +1,18 @@
 package com.ashwani.HealthCare.Controllers;
 
 
-import com.ashwani.HealthCare.DTO.DoctorDto;
-import com.ashwani.HealthCare.DTO.DoctorProfileDto;
-import com.ashwani.HealthCare.DTO.PatientProfileDto;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Service.DoctorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
@@ -31,21 +28,41 @@ public class DoctorController {
 
 
     @GetMapping("/profile")
-    public ResponseEntity<DoctorProfileDto> getDoctorProfile(Principal principal) {
+    public ResponseEntity<DoctorProfile> getDoctorProfile(Principal principal) {
         // Fetch doctor details from database
-        DoctorEntity doctor = doctorRepository.findById(Long.parseLong(principal.getName()))
+        long userId = Long.parseLong(principal.getName());
+        DoctorEntity doctor = doctorRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         // Convert to DTO
-        DoctorProfileDto response = modelMapper.map(doctor, DoctorProfileDto.class);
+        DoctorProfile response = modelMapper.map(doctor, DoctorProfile.class);
 
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/profile")
+    public ResponseEntity<DoctorProfile> updateDoctorProfile(
+            @Valid @RequestBody DoctorProfileUpdateRequest updateRequest,
+            Principal principal) {
+
+        Long doctorId = Long.parseLong(principal.getName());
+        DoctorProfile updatedProfile = doctorService.updateDoctorProfile(doctorId, updateRequest);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    // Single-search-bar endpoint
     @GetMapping("/search")
-    public ResponseEntity<List<DoctorDto>> searchDoctor(
-            @RequestParam(required = false) String specialization,
-            @RequestParam(required = false) String name){
-        return ResponseEntity.ok(doctorService.searchDoctors(specialization, name));
+    public ResponseEntity<List<DoctorDto>> searchDoctorUsingSearchBar(
+            @RequestParam(required = false) String q){
+        return ResponseEntity.ok(doctorService.searchDoctors(q, null));
+    }
+
+    // Multi-field filter endpoint
+    @GetMapping("/filter")
+    public List<DoctorDto> searchDoctorUsingFilters(
+            @RequestParam(required = false) String specialization
+    ) {
+        return doctorService.searchDoctors(null, specialization);
     }
 }

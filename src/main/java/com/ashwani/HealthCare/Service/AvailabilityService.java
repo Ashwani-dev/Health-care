@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Service;
 
-import com.ashwani.HealthCare.DTO.AvailabilityRequestDto;
-import com.ashwani.HealthCare.DTO.AvailabilityResponseDto;
+import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
+import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;
 import com.ashwani.HealthCare.Entity.DoctorAvailability;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;

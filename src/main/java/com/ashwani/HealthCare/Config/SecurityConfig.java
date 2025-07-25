@@ -39,7 +39,8 @@ public class SecurityConfig {
                                 "/api/auth/patient/register",
                                 "/api/auth/patient/login",
                                 "/api/auth/doctor/register",
-                                "/api/auth/doctor/login"
+                                "/api/auth/doctor/login",
+                                "/api/video-call/webhook"
                         ).permitAll()
 
                         // Role-based access

@@ -1,6 +1,7 @@
 package com.ashwani.HealthCare.Service;
 
-import com.ashwani.HealthCare.DTO.PatientAppointmentResponse;
+import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
+import com.ashwani.HealthCare.DTO.VideoSession.VideoSession;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Entity.DoctorAvailability;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
@@ -10,17 +11,19 @@ import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Utility.TimeSlot;
+import com.ashwani.HealthCare.specifications.AppointmentSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,8 +43,12 @@ public class AppointmentService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private VideoCallService videoCallService;
+
     private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
         return new PatientAppointmentResponse(
+                appointment.getId(),
                 appointment.getPatient().getId(),
                 appointment.getPatient().getFull_name(),
                 appointment.getDoctor().getId(),
@@ -93,58 +100,117 @@ public class AppointmentService {
         appointment.setEndTime(endTime);
         appointment.setStatus("SCHEDULED");
         appointment.setDescription(description);
+        appointment = appointmentRepository.save(appointment);
 
-        emailService.sendAppointmentConfirmation(doctor, patient, startTime, date, description);
+        VideoSession videoSession = videoCallService.createVideoSession(appointment.getId());
 
-        return appointmentRepository.save(appointment);
+        emailService.sendAppointmentConfirmation(
+                doctor,
+                patient,
+                startTime,
+                date,
+                description,
+                videoSession.getTwilioRoomName(),
+                videoSession.getPatientAccessToken(),
+                videoSession.getDoctorAccessToken()
+        );
+
+        return appointment;
     }
 
-    public List<PatientAppointmentResponse> getPatientAppointments(Long patientId) {
-        PatientEntity patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-        List<AppointmentEntity> appointments = appointmentRepository.findByPatient(patient);
+    public List<PatientAppointmentResponse> getPatientAppointments(
+            Long patientId,
+            LocalDate appointmentDate,
+            LocalTime startTime,
+            String status) {
+        if (!patientRepository.existsById(patientId)){
+            throw new RuntimeException(
+                    "Patient not found with ID: " + patientId
+            );
+        }
+        // Combine all specifications
+        Specification<AppointmentEntity> spec = Specification.where(AppointmentSpecifications.hasPatient(patientId))
+                .and(AppointmentSpecifications.hasAppointmentDate(appointmentDate))
+                .and(AppointmentSpecifications.hasStartTime(startTime))
+                .and(AppointmentSpecifications.hasStatus(status));
+
+        List<AppointmentEntity> appointments = appointmentRepository.findAll(spec);
+
+        // Update statuses for past appointments
+        List<AppointmentEntity> updatedAppointments = appointments.stream()
+                .filter(apt ->
+                        apt.getStatus().equals("SCHEDULED") &&  // Only scheduled appointments
+                                apt.getAppointmentDate().isBefore(LocalDate.now()) ||  // Past date
+                                (apt.getAppointmentDate().isEqual(LocalDate.now()) &&  // Today but past time
+                                        apt.getEndTime().isBefore(LocalTime.now()))
+                )
+                .peek(apt -> {
+                    apt.setStatus("COMPLETED");
+                    appointmentRepository.save(apt);  // Save updated status
+                })
+                .toList();
+
         return appointments.stream()
                 .map(this ::convertToResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<PatientAppointmentResponse> getDoctorAppointments(Long doctorId, LocalDate date) {
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        List<AppointmentEntity> appointments = appointmentRepository.findByDoctor(doctor);
+    public List<PatientAppointmentResponse> getDoctorAppointments(
+            Long doctorId,
+            LocalDate appointmentDate,
+            LocalTime startTime,
+            String status) {
+
+        // Verify doctor exists using existsById (more efficient than findById)
+        if (!doctorRepository.existsById(doctorId)) {
+            throw new RuntimeException(
+                    "Doctor not found with ID: " + doctorId
+            );
+        }
+
+        // Combine all specifications
+        Specification<AppointmentEntity> spec = Specification.where(AppointmentSpecifications.hasDoctor(doctorId))
+                .and(AppointmentSpecifications.hasAppointmentDate(appointmentDate))
+                .and(AppointmentSpecifications.hasStartTime(startTime))
+                .and(AppointmentSpecifications.hasStatus(status));
+
+        List<AppointmentEntity> appointments = appointmentRepository.findAll(spec);
+
         return appointments.stream()
-                .map(this ::convertToResponse)
+                .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     public List<TimeSlot> getAvailableSlots(Long doctorId, LocalDate date) {
+        // 1. Early validation
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        // 2. Batch fetch data
         List<DoctorAvailability> availabilities = doctorAvailabilityRepository
-                .findByDoctorAndDayOfWeek(doctor, dayOfWeek);
+                .findByDoctorAndDayOfWeek(doctor, date.getDayOfWeek());
 
-        List<AppointmentEntity> existingAppointments = appointmentRepository
-                .findByDoctorAndAppointmentDate(doctor, date);
+        Set<LocalTime> bookedSlots = appointmentRepository
+                .findByDoctorAndAppointmentDate(doctor, date)
+                .stream()
+                .map(AppointmentEntity::getStartTime)
+                .collect(Collectors.toSet());
 
+        // 3. Process slots efficiently
         List<TimeSlot> availableSlots = new ArrayList<>();
+        final int MAX_SLOTS = 100; // Safety limit
 
         for (DoctorAvailability availability : availabilities) {
-            if (availability.getIsAvailable()) {
-                LocalTime current = availability.getStartTime();
-                while (current.plusMinutes(30).isBefore(availability.getEndTime()) ||
-                        current.plusMinutes(30).isAfter(availability.getStartTime())) {
-                    LocalTime finalCurrent = current;
-                    boolean isBooked = existingAppointments.stream()
-                            .anyMatch(app -> app.getStartTime().equals(finalCurrent));
+            if (!availability.getIsAvailable()) continue;
 
-                    if (!isBooked) {
-                        availableSlots.add(new TimeSlot(current, current.plusMinutes(30)));
-                    }
+            LocalTime current = availability.getStartTime();
+            LocalTime endTime = availability.getEndTime();
 
-                    current = current.plusMinutes(30);
+            while (current.isBefore(endTime) && availableSlots.size() < MAX_SLOTS) {
+                if (!bookedSlots.contains(current)) {
+                    availableSlots.add(new TimeSlot(current, current.plusMinutes(30)));
                 }
+                current = current.plusMinutes(30);
             }
         }
         return availableSlots;

@@ -1,17 +1,20 @@
 package com.ashwani.HealthCare.Controllers;
 
-import com.ashwani.HealthCare.DTO.BookAppointmentRequest;
-import com.ashwani.HealthCare.DTO.PatientAppointmentResponse;
+import com.ashwani.HealthCare.DTO.Appointments.BookAppointmentRequest;
+import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +40,7 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-//    For deleting appointment with doctor by patient
+//    For cancelling appointment with doctor by patient
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<?> cancelAppointment(@PathVariable Long appointmentId, Principal principal) {
         try {
@@ -53,6 +56,11 @@ public class AppointmentController {
                     "appointmentId", appointmentId,
                     "status", "CANCELLED"
             ));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "error", e.getMessage(),
+                    "appointmentId", appointmentId
+            ));
         }
     }
 
@@ -60,14 +68,15 @@ public class AppointmentController {
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<List<PatientAppointmentResponse>> getDoctorAppointments(
             @PathVariable Long doctorId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
-                    date
-            ){
-        if(date == null){
-            date = LocalDate.now();
-        }
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) String status) {
 
-        List<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(doctorId, date);
+        List<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(
+                doctorId,
+                appointmentDate,
+                startTime,
+                status);
 
         return ResponseEntity.ok(appointments);
     }
@@ -76,15 +85,15 @@ public class AppointmentController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<PatientAppointmentResponse>> getPatientAppointments(
             @PathVariable Long patientId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate
-                    date
-    ){
-        if(date == null){
-            date = LocalDate.now();
-        }
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) String status){
 
-        List<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(patientId);
-
+        List<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(
+                patientId,
+                appointmentDate,
+                startTime,
+                status);
         return ResponseEntity.ok(appointments);
     }
 

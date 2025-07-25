@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.DTO;
+package com.ashwani.HealthCare.DTO.Appointments;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,6 +13,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 public class PatientAppointmentResponse {
 
+    private Long appointmentId;
     private Long patientId;
     private String patientName;
     private Long doctorId;

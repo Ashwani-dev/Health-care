@@ -24,14 +24,24 @@ public class EmailService {
         this.templateEngine = templateEngine;
     }
 
+    private String generatePatientJoinLink(String roomName, String patientAccessToken) {
+        return "https://yourclinic.com/join?room=" + roomName + "&token=" + patientAccessToken;
+
+    }
+
+    private String generateDoctorJoinLink(String roomName, String doctorAccessToken) {
+        return "https://yourclinic.com/join?room=" + roomName + "&token=" + doctorAccessToken;
+    }
+
     private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient,
-                                  LocalTime time, LocalDate date) {
+                                  LocalTime time, LocalDate date, String patientJoinLink) {
         try {
             Context context = new Context();
             context.setVariable("patientName", patient.getFull_name());
             context.setVariable("doctorName", doctor.getFull_name());
             context.setVariable("date", date);
             context.setVariable("time", time);
+            context.setVariable("joinLink", patientJoinLink);
             context.setVariable("cancelLink", "https://yourclinic.com/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/patient-appointment", context);
@@ -42,7 +52,7 @@ public class EmailService {
     }
 
     private void sendDoctorEmail(DoctorEntity doctor, PatientEntity patient,
-                                 LocalTime time, LocalDate date, String description) {
+                                 LocalTime time, LocalDate date, String description, String doctorJoinLink) {
         try {
             Context context = new Context();
             context.setVariable("doctorName", doctor.getFull_name());
@@ -51,6 +61,8 @@ public class EmailService {
             context.setVariable("date", date);
             context.setVariable("time", time);
             context.setVariable("description", description);
+            context.setVariable("joinLink", doctorJoinLink);
+            context.setVariable("cancelLink", "https://yourclinic.com/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/doctor-notification", context);
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
@@ -71,8 +83,10 @@ public class EmailService {
         mailSender.send(message);
     }
     @Async
-    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date, String description){
-        sendPatientEmail(doctor, patient, appointmentTime, date);
-        sendDoctorEmail(doctor, patient, appointmentTime, date, description);
+    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date, String description, String roomName, String patientAccessToken, String doctorAccessToken){
+        String patientJoinLink = generatePatientJoinLink(roomName, patientAccessToken);
+        String doctorJoinLink = generateDoctorJoinLink(roomName, doctorAccessToken);
+        sendPatientEmail(doctor, patient, appointmentTime, date, patientJoinLink);
+        sendDoctorEmail(doctor, patient, appointmentTime, date, description, doctorJoinLink);
     }
 }

@@ -46,8 +46,20 @@ public class AppointmentEntity {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
-    @JoinColumn(name = "cancelled_by_user_id")
+    @Column
     private Long cancelledBy;
+
+    @Column
+    private int callDurationMinutes = 30;
+
+    @Column
+    private int joinBufferMinutes = 10;
+
+    @Column
+    private Boolean recordingEnabled = false;
+
+    @Column
+    private Boolean recordingConsent = false;
 
     public boolean belongsToPatient(Long patientId) {
         return this.patient != null && this.patient.getId().equals(patientId);
@@ -76,5 +88,13 @@ public class AppointmentEntity {
         this.status = "CANCELLED";
         this.cancelledAt = LocalDateTime.now();
         this.cancelledBy = cancelledByUser;
+    }
+
+    public LocalDateTime getAppointmentDateTime() {
+        LocalDateTime appointmentDateTime = LocalDateTime.of(
+                this.appointmentDate,
+                this.startTime
+        );
+        return LocalDateTime.now();
     }
 }

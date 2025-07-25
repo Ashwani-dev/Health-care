@@ -1,12 +1,19 @@
 package com.ashwani.HealthCare.Service;
 
+import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
+import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
+import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.AppointmentRepository;
 import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
+import jakarta.validation.Valid;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PatientService {
@@ -15,24 +22,26 @@ public class PatientService {
     private final PatientRepository patientRepository;
 
     @Autowired
-    private final BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private final DoctorRepository doctorRepository;
-
-    @Autowired
-    private final AppointmentRepository appointmentRepository;
-
-    @Autowired
-    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final ModelMapper modelMapper;
 
 
-    public PatientService(PatientRepository patientRepository,
-                          BCryptPasswordEncoder passwordEncoder, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, DoctorAvailabilityRepository doctorAvailabilityRepository) {
+    public PatientService(PatientRepository patientRepository,ModelMapper modelMapper) {
         this.patientRepository = patientRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.doctorRepository = doctorRepository;
-        this.appointmentRepository = appointmentRepository;
-        this.doctorAvailabilityRepository = doctorAvailabilityRepository;
+        this.modelMapper = modelMapper;
+    }
+
+    public PatientProfile updatePatientProfile(Long patientId, @Valid PatientProfileUpdateRequest updateRequest) {
+        PatientEntity patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Patient not found with ID: " + patientId
+                ));
+
+        // Update only allowed fields
+        patient.setFull_name(updateRequest.full_name());
+        patient.setAddress(updateRequest.address());
+
+        PatientEntity updatedPatient = patientRepository.save(patient);
+        return modelMapper.map(updatedPatient, PatientProfile.class);
     }
 }
