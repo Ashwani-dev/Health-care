@@ -100,7 +100,7 @@ public class AppointmentService {
         appointment.setEndTime(endTime);
         appointment.setStatus("SCHEDULED");
         appointment.setDescription(description);
-        appointment = appointmentRepository.save(appointment);
+        appointmentRepository.save(appointment);
 
         VideoSession videoSession = videoCallService.createVideoSession(appointment.getId());
 
