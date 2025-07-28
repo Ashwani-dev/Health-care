@@ -121,9 +121,27 @@ public class VideoCallService {
         // Log room ended event
         logVideoCallEvent(session, VideoCallEventEntity.EventType.ROOM_ENDED, null, null, null, null);
 
-        // Complete room in Twilio
-        Room room = Room.updater(session.getTwilioRoomSid(), Room.RoomStatus.COMPLETED)
-                .update();
+        // Complete room in Twilio with error handling
+        try {
+            if (session.getTwilioRoomSid() != null && !session.getTwilioRoomSid().isEmpty()) {
+                Room room = Room.updater(session.getTwilioRoomSid(), Room.RoomStatus.COMPLETED)
+                        .update();
+                log.info("Successfully completed Twilio room: {}", session.getTwilioRoomSid());
+            } else {
+                log.warn("No Twilio room SID found for appointment: {}", appointmentId);
+            }
+        } catch (com.twilio.exception.ApiException e) {
+            if (e.getCode() == 20404) { // Room not found
+                log.warn("Twilio room not found (already completed/deleted): {}", session.getTwilioRoomSid());
+                // This is not a critical error - the room might have been auto-completed
+            } else {
+                log.error("Failed to complete Twilio room: {}", e.getMessage(), e);
+                // You might want to throw this error depending on your requirements
+            }
+        } catch (Exception e) {
+            log.error("Unexpected error completing Twilio room: {}", e.getMessage(), e);
+            // Handle other unexpected errors
+        }
     }
 
     @Transactional
