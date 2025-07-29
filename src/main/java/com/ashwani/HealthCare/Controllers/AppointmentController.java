@@ -6,7 +6,15 @@ import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -66,35 +74,34 @@ public class AppointmentController {
 
 //    Doctor can access all of his/her scheduled appointment
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<PatientAppointmentResponse>> getDoctorAppointments(
+    public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getDoctorAppointments(
             @PathVariable Long doctorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = "appointmentDate", direction = Sort.Direction.ASC) Pageable pageable,
+            PagedResourcesAssembler<PatientAppointmentResponse> assembler) {
 
-        List<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(
-                doctorId,
-                appointmentDate,
-                startTime,
-                status);
+        Page<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(
+                doctorId, appointmentDate, startTime, status, pageable);
 
-        return ResponseEntity.ok(appointments);
+        return ResponseEntity.ok(assembler.toModel(appointments));
     }
 
 //    Patient can access all of his/her scheduled appointment
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<PatientAppointmentResponse>> getPatientAppointments(
+    public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getPatientAppointments(
             @PathVariable Long patientId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
-            @RequestParam(required = false) String status){
+            @RequestParam(required = false) String status,
+            @PageableDefault(sort = "appointmentDate", direction = Sort.Direction.ASC) Pageable pageable,
+            PagedResourcesAssembler<PatientAppointmentResponse> assembler) {
 
-        List<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(
-                patientId,
-                appointmentDate,
-                startTime,
-                status);
-        return ResponseEntity.ok(appointments);
+        Page<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(
+                patientId, appointmentDate, startTime, status, pageable);
+
+        return ResponseEntity.ok(assembler.toModel(appointments));
     }
 
     @GetMapping("availability/{doctorId}")
