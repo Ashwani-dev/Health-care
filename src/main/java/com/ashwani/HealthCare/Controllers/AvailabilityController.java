@@ -17,13 +17,6 @@ import java.util.List;
 public class AvailabilityController {
     private final AvailabilityService availabilityService;
 
-    @GetMapping("/me")
-    public String getCurrentUser(Principal principal) {
-        if (principal == null) {
-            throw new RuntimeException("User not authenticated");
-        }
-        return "Current user: " + principal.getName(); // Returns the userId from JWT
-    }
     @PostMapping("/{doctorId}")
     public ResponseEntity<List<AvailabilityResponseDto>> setAvailability(
             @PathVariable Long doctorId,

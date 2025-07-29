@@ -13,6 +13,8 @@ import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import com.ashwani.HealthCare.specifications.AppointmentSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -82,11 +84,11 @@ public class AppointmentService {
 
         boolean isAvailable = availabilities.stream()
                 .anyMatch(av -> av.getIsAvailable() &&
-                        startTime.isAfter(av.getStartTime()) &&
-                        startTime.isBefore(av.getEndTime()));
+                        !startTime.isBefore(av.getStartTime()) &&
+                        !startTime.isAfter(av.getEndTime()));
 
         if (!isAvailable) {
-            throw new Exception("Doctor is not at this time");
+            throw new Exception("Doctor is not available at this time");
         }
 
         // Default duration - could be parameterized
@@ -118,48 +120,48 @@ public class AppointmentService {
         return appointment;
     }
 
-    public List<PatientAppointmentResponse> getPatientAppointments(
+    @Transactional(readOnly = true)
+    public Page<PatientAppointmentResponse> getPatientAppointments(
             Long patientId,
             LocalDate appointmentDate,
             LocalTime startTime,
-            String status) {
-        if (!patientRepository.existsById(patientId)){
-            throw new RuntimeException(
-                    "Patient not found with ID: " + patientId
-            );
+            String status,
+            Pageable pageable) {
+
+        if (!patientRepository.existsById(patientId)) {
+            throw new RuntimeException("Patient not found with ID: " + patientId);
         }
-        // Combine all specifications
+
+        // Build specifications
         Specification<AppointmentEntity> spec = Specification.where(AppointmentSpecifications.hasPatient(patientId))
                 .and(AppointmentSpecifications.hasAppointmentDate(appointmentDate))
                 .and(AppointmentSpecifications.hasStartTime(startTime))
                 .and(AppointmentSpecifications.hasStatus(status));
 
-        List<AppointmentEntity> appointments = appointmentRepository.findAll(spec);
+        // Get paginated results
+        Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        // Update statuses for past appointments
-        List<AppointmentEntity> updatedAppointments = appointments.stream()
-                .filter(apt ->
-                        apt.getStatus().equals("SCHEDULED") &&  // Only scheduled appointments
-                                apt.getAppointmentDate().isBefore(LocalDate.now()) ||  // Past date
-                                (apt.getAppointmentDate().isEqual(LocalDate.now()) &&  // Today but past time
-                                        apt.getEndTime().isBefore(LocalTime.now()))
-                )
+        // Process status updates
+        List<AppointmentEntity> updatedAppointments = appointmentPage.getContent().stream()
+                .filter(apt -> apt.getStatus().equals("SCHEDULED") &&
+                        (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
+                                (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
+                                        apt.getEndTime().isBefore(LocalTime.now()))))
                 .peek(apt -> {
                     apt.setStatus("COMPLETED");
-                    appointmentRepository.save(apt);  // Save updated status
+                    appointmentRepository.save(apt);
                 })
                 .toList();
 
-        return appointments.stream()
-                .map(this ::convertToResponse)
-                .collect(Collectors.toList());
+        return appointmentPage.map(this::convertToResponse);
     }
 
-    public List<PatientAppointmentResponse> getDoctorAppointments(
+    public Page<PatientAppointmentResponse> getDoctorAppointments(
             Long doctorId,
             LocalDate appointmentDate,
             LocalTime startTime,
-            String status) {
+            String status,
+            Pageable pageable) {
 
         // Verify doctor exists using existsById (more efficient than findById)
         if (!doctorRepository.existsById(doctorId)) {
@@ -174,11 +176,10 @@ public class AppointmentService {
                 .and(AppointmentSpecifications.hasStartTime(startTime))
                 .and(AppointmentSpecifications.hasStatus(status));
 
-        List<AppointmentEntity> appointments = appointmentRepository.findAll(spec);
+        // Get paginated results
+        Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        return appointments.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return appointmentPage.map(this::convertToResponse);
     }
 
     public List<TimeSlot> getAvailableSlots(Long doctorId, LocalDate date) {
