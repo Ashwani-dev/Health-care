@@ -40,7 +40,8 @@ public class SecurityConfig {
                                 "/api/auth/patient/login",
                                 "/api/auth/doctor/register",
                                 "/api/auth/doctor/login",
-                                "/api/video-call/webhook"
+                                "/api/video-call/webhook/",
+                                "/api/payments/webhook/**"
                         ).permitAll()
 
                         // Role-based access
@@ -80,7 +81,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://*.ngrok-free.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
