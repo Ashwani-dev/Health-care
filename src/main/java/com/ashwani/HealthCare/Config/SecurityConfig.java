@@ -40,18 +40,19 @@ public class SecurityConfig {
                                 "/api/auth/patient/login",
                                 "/api/auth/doctor/register",
                                 "/api/auth/doctor/login",
-                                "/api/video-call/webhook/",
+                                "/api/video-call/webhook",
                                 "/api/payments/webhook/**"
                         ).permitAll()
 
                         // Role-based access
                         .requestMatchers("/api/patient/**").hasRole("PATIENT")
                         .requestMatchers("/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
+                        .requestMatchers(HttpMethod.GET,"/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.POST, "/api/availability/{doctorId}").hasRole("DOCTOR")
+                        .requestMatchers("/api/availability/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(
                                 HttpMethod.DELETE, "/api/availability/{doctorId}/{slotId}"
                         ).hasRole("DOCTOR")
-                        .requestMatchers("/api/availability/**").hasAnyRole("DOCTOR", "PATIENT")
 
                         // All other requests require authentication
                         .anyRequest().authenticated()

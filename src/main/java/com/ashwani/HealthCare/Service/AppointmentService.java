@@ -120,7 +120,7 @@ public class AppointmentService {
         return appointment;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<PatientAppointmentResponse> getPatientAppointments(
             Long patientId,
             LocalDate appointmentDate,

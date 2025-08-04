@@ -47,7 +47,7 @@ public class VideoCallService {
         }
 
         // Create unique room name
-        String roomName = "healthcare-" + UUID.randomUUID().toString();
+        String roomName = "healthcare-" + appointmentId.toString();
 
         // Create Twilio room
         Room room = Room.creator()
@@ -194,16 +194,19 @@ public class VideoCallService {
         TwilioWebhookEventEntity savedEvent = twilioWebhookEventRepository.save(twilioWebhookEventEntity);
 
         try {
+            Long appointmentId = Long.parseLong(savedEvent.getRoomSid().substring("healthcare-".length()));
+            String participantIdentity = savedEvent.getParticipantIdentity();
+            String participantSid = savedEvent.getParticipantSid();
             // Process different event types
             switch (twilioWebhookEventEntity.getEventType()) {
                 case "room-created":
                     // Handle room created
                     break;
                 case "participant-connected":
-                    // Handle participant connected
+                    handleParticipantJoined(appointmentId, participantIdentity, participantSid);
                     break;
                 case "participant-disconnected":
-                    // Handle participant disconnected
+                    handleParticipantLeft(appointmentId, participantIdentity, participantSid);
                     break;
                 case "track-published":
                     // Handle track published
