@@ -45,9 +45,6 @@ public class AppointmentService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private VideoCallService videoCallService;
-
     private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
         return new PatientAppointmentResponse(
                 appointment.getId(),
@@ -104,17 +101,13 @@ public class AppointmentService {
         appointment.setDescription(description);
         appointmentRepository.save(appointment);
 
-        VideoSession videoSession = videoCallService.createVideoSession(appointment.getId());
-
         emailService.sendAppointmentConfirmation(
                 doctor,
                 patient,
+                appointment.getId(),
                 startTime,
                 date,
-                description,
-                videoSession.getTwilioRoomName(),
-                videoSession.getPatientAccessToken(),
-                videoSession.getDoctorAccessToken()
+                description
         );
 
         return appointment;

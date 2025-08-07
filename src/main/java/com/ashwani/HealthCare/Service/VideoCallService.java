@@ -190,6 +190,12 @@ public class VideoCallService {
 
     @Transactional
     public void processTwilioWebhook(TwilioWebhookEventEntity twilioWebhookEventEntity) {
+        // Check if this is a test webhook
+        if (isTestTwilioWebhook(twilioWebhookEventEntity)) {
+            log.info("Test Twilio webhook received: {}", twilioWebhookEventEntity.getEventType());
+            return;
+        }
+
         // Save webhook event
         TwilioWebhookEventEntity savedEvent = twilioWebhookEventRepository.save(twilioWebhookEventEntity);
 
@@ -258,6 +264,25 @@ public class VideoCallService {
                 .build();
 
         videoCallEventRepository.save(event);
+    }
+
+    private boolean isTestTwilioWebhook(TwilioWebhookEventEntity twilioWebhookEventEntity) {
+        // Check if this is a test webhook by looking for test indicators
+        if (twilioWebhookEventEntity.getRoomSid() == null || twilioWebhookEventEntity.getRoomSid().isEmpty()) {
+            return true;
+        }
+        
+        // Check if roomSid doesn't start with "healthcare-" (our expected format)
+        if (!twilioWebhookEventEntity.getRoomSid().startsWith("healthcare-")) {
+            return true;
+        }
+        
+        // Check if eventType is null or empty
+        if (twilioWebhookEventEntity.getEventType() == null || twilioWebhookEventEntity.getEventType().isEmpty()) {
+            return true;
+        }
+        
+        return false;
     }
 
     private VideoSession mapToVideoSession(VideoCallSessionsEntity entity) {

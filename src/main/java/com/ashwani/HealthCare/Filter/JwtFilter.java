@@ -6,7 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,6 +30,13 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        
+        // Skip JWT validation for webhook endpoints
+        if (isWebhookEndpoint(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         try {
             String jwt = getJwtFromRequest(request);
 
@@ -72,6 +78,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private boolean isPatientEndpoint(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/api/patient/");
+    }
+
+    private boolean isWebhookEndpoint(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/payments/webhook/") ||
+               request.getRequestURI().startsWith("/api/video-call/webhook");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

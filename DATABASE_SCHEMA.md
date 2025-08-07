@@ -268,7 +268,7 @@ CREATE INDEX idx_availability_available ON doctor_availabilities(is_available);
 - `updated_at` - Last update timestamp
 
 ### 6. payments
-Stores payment transaction information.
+Stores paymentEntity transaction information.
 
 ```sql
 CREATE TABLE payments (
@@ -302,7 +302,7 @@ CREATE INDEX idx_payment_created ON payments(created_at);
 - `amount` - Payment amount
 - `currency` - Payment currency (default: INR)
 - `status` - Payment status
-- `payment_method` - Method used for payment
+- `payment_method` - Method used for paymentEntity
 - `transaction_id` - Gateway transaction ID
 - `created_at` - Payment creation timestamp
 - `updated_at` - Last update timestamp

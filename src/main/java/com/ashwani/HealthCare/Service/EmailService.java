@@ -4,6 +4,7 @@ import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Entity.PatientEntity;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -15,22 +16,20 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final VideoCallService videoCallService;
 
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
-        this.mailSender = mailSender;
-        this.templateEngine = templateEngine;
-    }
 
-    private String generatePatientJoinLink(String roomName, String patientAccessToken) {
-        return "https://yourclinic.com/join?room=" + roomName + "&token=" + patientAccessToken;
+    private String generatePatientJoinLink(Long appointmentId) {
+        return "https://yourclinic.com/session/" + appointmentId;
 
     }
 
-    private String generateDoctorJoinLink(String roomName, String doctorAccessToken) {
-        return "https://yourclinic.com/join?room=" + roomName + "&token=" + doctorAccessToken;
+    private String generateDoctorJoinLink(Long appointmentId) {
+        return "https://yourclinic.com/session/" + appointmentId;
     }
 
     private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient,
@@ -83,9 +82,9 @@ public class EmailService {
         mailSender.send(message);
     }
     @Async
-    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, LocalTime appointmentTime, LocalDate date, String description, String roomName, String patientAccessToken, String doctorAccessToken){
-        String patientJoinLink = generatePatientJoinLink(roomName, patientAccessToken);
-        String doctorJoinLink = generateDoctorJoinLink(roomName, doctorAccessToken);
+    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, Long appointmentId, LocalTime appointmentTime, LocalDate date, String description){
+        String patientJoinLink = generatePatientJoinLink(appointmentId);
+        String doctorJoinLink = generateDoctorJoinLink(appointmentId);
         sendPatientEmail(doctor, patient, appointmentTime, date, patientJoinLink);
         sendDoctorEmail(doctor, patient, appointmentTime, date, description, doctorJoinLink);
     }
