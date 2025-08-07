@@ -13,14 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deployment guides for multiple environments
 - Developer guidelines and coding standards
 - Quick reference guide
+- Debug endpoint for payment orders (`/api/payments/debug/orders`)
 
 ### Changed
 - Updated README with detailed project information
 - Enhanced error handling across all endpoints
 - Improved logging configuration
+- **Payment API Updates**:
+  - Changed `/api/payments/create` to `/api/payments/initiate`
+  - Updated `/api/payments/webhook` to `/api/payments/webhook/cashfree`
+  - Updated payment request/response structure
+  - Added webhook signature validation (configurable)
 
 ### Fixed
 - Documentation formatting and consistency
+- Payment webhook endpoint path consistency
 
 ---
 
@@ -61,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - XSS protection
 
 - **Integration Features**
-  - Cashfree payment gateway integration
+  - Cashfree paymentEntity gateway integration
   - Twilio video calling integration
   - Email service with Thymeleaf templates
   - Database connection pooling (HikariCP)
@@ -169,7 +176,7 @@ EMAIL_PASSWORD=your_app_password
 ```
 
 #### API Changes
-- New payment endpoints added
+- New paymentEntity endpoints added
 - Video call endpoints added
 - Enhanced error responses
 - Improved pagination support
@@ -219,7 +226,7 @@ When contributing to this project, please:
 type(scope): description
 
 feat: add new appointment booking feature
-fix: resolve payment webhook issue
+fix: resolve paymentEntity webhook issue
 docs: update API documentation
 test: add unit tests for appointment service
 refactor: improve error handling in controllers

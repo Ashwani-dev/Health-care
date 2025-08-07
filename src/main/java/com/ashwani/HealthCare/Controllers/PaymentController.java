@@ -5,15 +5,15 @@ import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
 import com.ashwani.HealthCare.Service.PaymentService;
 import com.cashfree.pg.ApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/payments")
+@Slf4j
 public class PaymentController {
     @Autowired
     private PaymentService paymentService;
@@ -24,9 +24,30 @@ public class PaymentController {
     }
 
     @PostMapping("/webhook/cashfree")
-    public ResponseEntity<Void> paymentWebhook(@RequestBody PaymentWebhookPayload payload) {
-        paymentService.handleWebhook(payload);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> paymentWebhook(@RequestBody String rawBody,
+                                            @RequestHeader(value = "x-webhook-signature", required = false) String signature) {
+        try {
+            // Parse the JSON payload
+            ObjectMapper objectMapper = new ObjectMapper();
+            PaymentWebhookPayload payload = objectMapper.readValue(rawBody, PaymentWebhookPayload.class);
+            
+            paymentService.handleWebhook(payload, signature, rawBody);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error processing webhook", e);
+            return ResponseEntity.status(500).body("Error processing webhook: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/debug/orders")
+    public ResponseEntity<?> debugOrders() {
+        try {
+            var orders = paymentService.getAllOrders();
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            log.error("Error getting orders", e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 }
 

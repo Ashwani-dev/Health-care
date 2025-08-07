@@ -309,7 +309,7 @@ public class AppointmentEntity {
 #### Branch Naming Convention
 ```
 feature/appointment-booking
-bugfix/payment-webhook-fix
+bugfix/paymentEntity-webhook-fix
 hotfix/security-vulnerability
 release/v1.2.0
 ```
@@ -317,7 +317,7 @@ release/v1.2.0
 #### Commit Message Format
 ```
 feat: add appointment booking functionality
-fix: resolve payment webhook issue
+fix: resolve paymentEntity webhook issue
 docs: update API documentation
 test: add unit tests for appointment service
 refactor: improve error handling in controllers

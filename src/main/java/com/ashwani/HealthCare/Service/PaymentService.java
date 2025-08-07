@@ -4,7 +4,7 @@ package com.ashwani.HealthCare.Service;
 import com.ashwani.HealthCare.DTO.Payment.PaymentRequest;
 import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
-import com.ashwani.HealthCare.Entity.Payment;
+import com.ashwani.HealthCare.Entity.PaymentEntity;
 import com.ashwani.HealthCare.Repository.PaymentRepository;
 import com.cashfree.pg.ApiException;
 import com.cashfree.pg.ApiResponse;
@@ -14,8 +14,10 @@ import com.cashfree.pg.model.CustomerDetails;
 import com.cashfree.pg.model.OrderEntity;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -23,12 +25,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
     @Value("${cashfree.secretKey}")
     private String secretKey;
+    
+    @Value("${cashfree.webhook.signature.validation.enabled:true}")
+    private boolean signatureValidationEnabled;
 
     private final Cashfree cashfree;
     private final PaymentRepository paymentRepository;
@@ -37,6 +44,7 @@ public class PaymentService {
         // Construct the customer details
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setCustomerId(paymentRequest.getCustomerId());
+        customerDetails.setCustomerName(paymentRequest.getCustomerName());
         customerDetails.setCustomerPhone(paymentRequest.getCustomerPhone());
         customerDetails.setCustomerEmail(paymentRequest.getCustomerEmail());
 
@@ -52,45 +60,109 @@ public class PaymentService {
         String orderId = response.getData().getOrderId();
         String paymentSessionId = response.getData().getPaymentSessionId();
 
+        PaymentEntity payment = new PaymentEntity();
+        payment.setOrderId(response.getData().getOrderId());
+
+        paymentRepository.save(payment);
+
         // Return order and session info to the controller/caller
         return new PaymentResponse(orderId, paymentSessionId);
     }
 
-    public void handleWebhook(PaymentWebhookPayload payload) {
-        // 1. Validate the webhook signature
-        if (!isSignatureValid(payload)) {
-            // Optionally log warning and return without processing
-            throw new SecurityException("Invalid webhook signature");
+    @Transactional
+    public void handleWebhook(PaymentWebhookPayload payload, String signature, String rawBody) {
+        try {
+            // Check if this is a test webhook (contains test data)
+            if (isTestWebhook(payload)) {
+                log.info("Test webhook received: {}", payload.getType());
+                return;
+            }
+
+            // 1. Validate the webhook signature (with configurable enforcement)
+            if (signatureValidationEnabled) {
+                boolean signatureValid = isSignatureValid(payload, signature, rawBody);
+                if (!signatureValid) {
+                    log.error("Invalid webhook signature for order: {}", payload.getOrderId());
+                    throw new SecurityException("Invalid webhook signature");
+                }
+            }
+
+            // 2. Find the payment/order record by orderId
+            PaymentEntity payment = paymentRepository.findByOrderId(payload.getOrderId());
+            if (payment == null) {
+                log.error("Order not found in database: {}", payload.getOrderId());
+                throw new EntityNotFoundException("Order not found: " + payload.getOrderId());
+            }
+
+            // 3. Update payment status
+            payment.setStatus(payload.getOrderStatus());
+            payment.setReferenceId(payload.getReferenceId());
+            payment.setPaymentMode(payload.getPaymentMode());
+            payment.setTransactionTime(payload.getTxTime());
+            payment.setOrderAmount(payload.getOrderAmount());
+
+            // 4. Save the updated record
+            paymentRepository.save(payment);
+            log.info("Payment webhook processed successfully: orderId={}, status={}", 
+                    payload.getOrderId(), payload.getOrderStatus());
+            
+        } catch (Exception e) {
+            log.error("Error processing webhook for orderId: {}", payload.getOrderId(), e);
+            throw e;
         }
-
-        // 2. Find the payment/order record by orderId
-        Payment payment = paymentRepository.findByOrderId(payload.getOrderId());
-        if (payment == null) {
-            // Optionally log and return—a production app might need to handle this
-            throw new EntityNotFoundException("Order not found: " + payload.getOrderId());
-        }
-
-        // 3. Update payment status
-        payment.setStatus(payload.getOrderStatus());
-        payment.setReferenceId(payload.getReferenceId());
-        payment.setPaymentMode(payload.getPaymentMode());
-        payment.setTransactionTime(payload.getTxTime());
-
-        // (Optionally, set more fields based on payload)
-
-        // 4. Save the updated record
-        paymentRepository.save(payment);
-
-        // 5. Optionally log for audit
-        // log.info("Payment webhook processed: {}", payload.getOrderId());
     }
 
-    private boolean isSignatureValid(PaymentWebhookPayload payload) {
-        // Assemble data string as per Cashfree documentation
-        String data = payload.getOrderId() + payload.getOrderAmount() + payload.getReferenceId()
-                + payload.getOrderStatus() + payload.getPaymentMode() + payload.getTxTime();
-        String computedSignature = hmacSha256(data, secretKey);
-        return computedSignature.equals(payload.getSignature());
+    public List<PaymentEntity> getAllOrders() {
+        return paymentRepository.findAll();
+    }
+
+    private boolean isSignatureValid(PaymentWebhookPayload payload, String signature, String rawBody) {
+        try {
+            if (signature == null || signature.isEmpty()) {
+                return false;
+            }
+
+            if (secretKey == null || secretKey.isEmpty()) {
+                log.error("Secret key is null or empty!");
+                return false;
+            }
+
+            // Try multiple signature computation methods
+            String computedSignature1 = hmacSha256(rawBody, secretKey);
+            String computedSignature2 = hmacSha256(rawBody.trim(), secretKey);
+            
+            // Try with normalized line endings
+            String normalizedBody = rawBody.replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n");
+            String computedSignature3 = hmacSha256(normalizedBody, secretKey);
+            
+            // Check if any of the computed signatures match
+            return computedSignature1.equals(signature) || 
+                   computedSignature2.equals(signature) || 
+                   computedSignature3.equals(signature);
+            
+        } catch (Exception e) {
+            log.error("Error during signature validation: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean isTestWebhook(PaymentWebhookPayload payload) {
+        // Check if orderId is null or empty (test webhooks might not have real order data)
+        if (payload.getOrderId() == null || payload.getOrderId().isEmpty()) {
+            return true;
+        }
+        
+        // Check if this is a test webhook by looking for test indicators in the order ID
+        if (payload.getOrderId().contains("test") || payload.getOrderId().contains("demo")) {
+            return true;
+        }
+        
+        // Check if the webhook type indicates it's a test
+        if (payload.getType() != null && payload.getType().toLowerCase().contains("test")) {
+            return true;
+        }
+        
+        return false;
     }
 
     private String hmacSha256(String data, String secret) {
@@ -105,4 +177,5 @@ public class PaymentService {
         }
     }
 }
+
 

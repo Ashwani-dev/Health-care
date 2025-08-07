@@ -9,7 +9,7 @@ A comprehensive Spring Boot application for managing healthcare appointments, do
 - **Doctor Management**: Doctor registration, profile management, and availability scheduling
 - **Patient Management**: Patient registration and profile management
 - **Video Calling**: Integrated telemedicine with Twilio video calling
-- **Payment Processing**: Secure payment integration with Cashfree
+- **Payment Processing**: Secure paymentEntity integration with Cashfree
 - **Email Notifications**: Automated email notifications for appointments and updates
 - **Authentication & Authorization**: JWT-based secure authentication system
 
@@ -92,8 +92,9 @@ A comprehensive Spring Boot application for managing healthcare appointments, do
 - `PUT /api/patients/{id}` - Update patient profile
 
 ### Payment Endpoints
-- `POST /api/payments/create` - Create payment order
-- `POST /api/payments/webhook` - Payment webhook handler
+- `POST /api/payments/initiate` - Initiate payment order
+- `POST /api/payments/webhook/cashfree` - Payment webhook handler
+- `GET /api/payments/debug/orders` - Debug orders (development)
 
 ### Video Call Endpoints
 - `POST /api/video/create-session` - Create video call session
@@ -144,7 +145,7 @@ jwt.expiration.ms=86400000
 ```
 
 ### Payment Configuration
-Cashfree payment gateway integration:
+Cashfree paymentEntity gateway integration:
 
 ```properties
 cashfree.env=SANDBOX

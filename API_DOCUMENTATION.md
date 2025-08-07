@@ -437,19 +437,19 @@ Update patient profile information.
 
 ## 💳 Payment Endpoints
 
-### Create Payment Order
-**POST** `/payments/create`
+### Initiate Payment
+**POST** `/payments/initiate`
 
 Create a new payment order for an appointment.
 
 **Request Body:**
 ```json
 {
-  "appointmentId": 1,
-  "amount": 100.00,
-  "currency": "INR",
+  "customerId": "CUST_123456",
+  "customerName": "John Doe",
+  "customerPhone": "+1234567890",
   "customerEmail": "patient@example.com",
-  "customerPhone": "+1234567890"
+  "amount": 100.00
 }
 ```
 
@@ -457,16 +457,19 @@ Create a new payment order for an appointment.
 ```json
 {
   "orderId": "order_123456789",
-  "paymentUrl": "https://sandbox.cashfree.com/pg/order/order_123456789",
-  "status": "ACTIVE",
-  "message": "Payment order created successfully"
+  "paymentSessionId": "session_123456789"
 }
 ```
 
 ### Payment Webhook
-**POST** `/payments/webhook`
+**POST** `/payments/webhook/cashfree`
 
 Handle payment status updates from Cashfree.
+
+**Headers:**
+```
+x-webhook-signature: <signature> (optional, configurable)
+```
 
 **Request Body:**
 ```json
@@ -474,7 +477,7 @@ Handle payment status updates from Cashfree.
   "orderId": "order_123456789",
   "orderAmount": 100.00,
   "referenceId": "ref_123456789",
-  "txStatus": "SUCCESS",
+  "orderStatus": "SUCCESS",
   "paymentMode": "UPI",
   "txMsg": "Transaction successful",
   "txTime": "2024-01-10T10:00:00Z"
@@ -482,10 +485,27 @@ Handle payment status updates from Cashfree.
 ```
 
 **Response (200 OK):**
+```
+Webhook processed successfully
+```
+
+### Debug Orders
+**GET** `/payments/debug/orders`
+
+Get all payment orders (for debugging purposes).
+
+**Response (200 OK):**
 ```json
-{
-  "message": "Webhook processed successfully"
-}
+[
+  {
+    "id": 1,
+    "orderId": "order_123456789",
+    "status": "SUCCESS",
+    "referenceId": "ref_123456789",
+    "paymentMode": "UPI",
+    "createdAt": "2024-01-10T10:00:00Z"
+  }
+]
 ```
 
 ---

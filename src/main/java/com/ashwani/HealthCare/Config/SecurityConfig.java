@@ -46,7 +46,6 @@ public class SecurityConfig {
 
                         // Role-based access
                         .requestMatchers("/api/patient/**").hasRole("PATIENT")
-                        .requestMatchers("/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.GET,"/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.POST, "/api/availability/{doctorId}").hasRole("DOCTOR")
                         .requestMatchers("/api/availability/**").hasAnyRole("DOCTOR", "PATIENT")

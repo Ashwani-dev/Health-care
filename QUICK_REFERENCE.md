@@ -120,8 +120,9 @@ PUT    /api/patients/{id}              - Update patient profile
 
 ### Payments
 ```
-POST   /api/payments/create            - Create payment order
-POST   /api/payments/webhook           - Payment webhook
+POST   /api/payments/initiate          - Initiate payment order
+POST   /api/payments/webhook/cashfree  - Payment webhook
+GET    /api/payments/debug/orders      - Debug orders (development)
 ```
 
 ### Video Calls
@@ -161,7 +162,7 @@ ORDER BY appointment_date, start_time;
 SELECT * FROM doctor_availabilities 
 WHERE doctor_id = ? AND date = ? AND is_available = true;
 
--- Get payment status
+-- Get paymentEntity status
 SELECT * FROM payments 
 WHERE appointment_id = ? ORDER BY created_at DESC LIMIT 1;
 ```
@@ -186,7 +187,7 @@ spring.mail.port=587
 spring.mail.username=${EMAIL_ID}
 spring.mail.password=${EMAIL_PASSWORD}
 
-# Payment
+# PaymentEntity
 cashfree.env=SANDBOX
 cashfree.appId=${APP_ID}
 cashfree.secretKey=${SECRET_KEY}
@@ -337,12 +338,12 @@ Solution:
 
 #### Payment Gateway Error
 ```
-Error: Cashfree payment failed
+Error: Cashfree paymentEntity failed
 Solution:
 1. Verify APP_ID and SECRET_KEY
 2. Check if using correct environment (SANDBOX/PRODUCTION)
 3. Verify webhook URL configuration
-4. Check payment amount and currency
+4. Check paymentEntity amount and currency
 ```
 
 #### Email Service Error

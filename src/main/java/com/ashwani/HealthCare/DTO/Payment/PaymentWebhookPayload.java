@@ -1,48 +1,123 @@
 package com.ashwani.HealthCare.DTO.Payment;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import java.util.Map;
+
+import java.math.BigDecimal;
 
 @Data
-@AllArgsConstructor
-@RequiredArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentWebhookPayload {
-    private Map<String, Object> data;
+    private WebhookData data;
     private String type;
     private String event_time;
 
-    // Helper methods to safely extract values
+    // Main accessor methods
     public String getOrderId() {
-        return data != null ? (String) data.get("orderId") : null;
+        return data != null && data.order != null ? data.order.order_id : null;
     }
 
-    public Double getOrderAmount() {
-        return data != null ? (Double) data.get("orderAmount") : null;
+    // Nested DTO classes (package-private)
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class WebhookData {
+        private Order order;
+        private Payment payment;
+        private CustomerDetails customer_details;
+        private PaymentGatewayDetails payment_gateway_details;
+        private Object payment_offers;
     }
 
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class Order {
+        private String order_id;
+        private BigDecimal order_amount;
+        private String order_currency;
+        private Object order_tags;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class Payment {
+        private Long cf_payment_id;
+        private String payment_status;
+        private BigDecimal payment_amount;
+        private String payment_currency;
+        private String payment_time;
+        private String payment_message; 
+        private String bank_reference; 
+        private String auth_id; 
+        private PaymentMethod payment_method;
+        private String payment_group;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class PaymentMethod {
+        private Card card;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class Card {
+        private String channel; 
+        private String card_number;
+        private String card_network;
+        private String card_type;
+        private String card_sub_type; 
+        private String card_country; 
+        private String card_bank_name; 
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class CustomerDetails {
+        private String customer_name; 
+        private String customer_id;
+        private String customer_email;
+        private String customer_phone;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class PaymentGatewayDetails {
+        private String gateway_name;
+        private String gateway_order_id;
+        private String gateway_payment_id; 
+        private String gateway_status_code; 
+        private String gateway_order_reference_id; 
+        private String gateway_settlement; 
+    }
+
+    // Helper methods
     public String getOrderStatus() {
-        return data != null ? (String) data.get("orderStatus") : null;
+        return getData() != null && getData().getPayment() != null
+                ? getData().getPayment().getPayment_status()
+                : null;
     }
 
     public String getReferenceId() {
-        return data != null ? (String) data.get("referenceId") : null;
+        return getData() != null && getData().getPayment() != null
+                ? getData().getPayment().getCf_payment_id().toString()
+                : null;
     }
 
     public String getPaymentMode() {
-        return data != null ? (String) data.get("paymentMode") : null;
+        return getData() != null && getData().getPayment() != null
+                ? getData().getPayment().getPayment_group()
+                : null;
     }
 
     public String getTxTime() {
-        return data != null ? (String) data.get("txTime") : null;
+        return getData() != null && getData().getPayment() != null
+                ? getData().getPayment().getPayment_time()
+                : null;
     }
 
-    public String getSignature() {
-        return data != null ? (String) data.get("signature") : null;
-    }
-
-    public String getPaymentCurrency() {
-        return data != null ? (String) data.get("paymentCurrency") : null;
+    public BigDecimal getOrderAmount() {
+        return getData() != null && getData().getPayment() != null
+                ? getData().getPayment().getPayment_amount()
+                : null;
     }
 }
