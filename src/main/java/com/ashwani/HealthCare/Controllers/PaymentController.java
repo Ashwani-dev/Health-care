@@ -39,6 +39,12 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/status/{orderId}")
+    public ResponseEntity<String> getPaymentStatus(@PathVariable String orderId) throws ApiException {
+        String status = paymentService.getPaymentStatus(orderId);
+        return ResponseEntity.status(200).body("Your payment status is " + status);
+    }
+
     @GetMapping("/debug/orders")
     public ResponseEntity<?> debugOrders() {
         try {

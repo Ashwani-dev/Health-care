@@ -12,6 +12,7 @@ import com.cashfree.pg.Cashfree;
 import com.cashfree.pg.model.CreateOrderRequest;
 import com.cashfree.pg.model.CustomerDetails;
 import com.cashfree.pg.model.OrderEntity;
+import com.cashfree.pg.model.OrderMeta;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,12 @@ public class PaymentService {
     @Value("${cashfree.webhook.signature.validation.enabled:true}")
     private boolean signatureValidationEnabled;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
+    @Value("${app.backend-url}")
+    private String backendUrl;
+
     private final Cashfree cashfree;
     private final PaymentRepository paymentRepository;
 
@@ -53,7 +60,10 @@ public class PaymentService {
         request.setOrderAmount(paymentRequest.getAmount());
         request.setOrderCurrency("INR");
         request.setCustomerDetails(customerDetails);
-        // Optionally set up OrderMetaData for return/notify URLs
+
+        OrderMeta orderMeta = new OrderMeta();
+        orderMeta.setReturnUrl(frontendUrl + "/payment-status?order_id={order_id}");
+        request.setOrderMeta(orderMeta);
 
         // Create order via SDK
         ApiResponse<OrderEntity> response = cashfree.PGCreateOrder(request, null, null, null);
@@ -62,11 +72,25 @@ public class PaymentService {
 
         PaymentEntity payment = new PaymentEntity();
         payment.setOrderId(response.getData().getOrderId());
+        payment.setStatus("PENDING");
 
         paymentRepository.save(payment);
 
         // Return order and session info to the controller/caller
         return new PaymentResponse(orderId, paymentSessionId);
+    }
+
+    /**
+     * Returns latest payment status we know for a given order.
+     * For now, reads from our DB which is updated by webhook. In future,
+     * can be extended to call Cashfree's order/status API for real-time status.
+     */
+    public String getPaymentStatus(String orderId) throws ApiException {
+        PaymentEntity payment = paymentRepository.findByOrderId(orderId);
+        if (payment == null) {
+            return "PENDING";
+        }
+        return payment.getStatus() == null ? "PENDING" : payment.getStatus();
     }
 
     @Transactional
