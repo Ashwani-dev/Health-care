@@ -116,6 +116,13 @@
 			<artifactId>spring-boot-starter-hateoas</artifactId>
 		</dependency>
 
+<!--		Payment Service AND Appointment Service POM-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+
+<!--		For payment gateway-->
 		<dependency>
 			<groupId>com.cashfree.pg.java</groupId>
 			<artifactId>cashfree_pg</artifactId>

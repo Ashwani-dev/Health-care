@@ -48,6 +48,30 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    /*
+    For creating a hold appointment which will be replica of book appointment
+    will be deleted later after appointment book
+    */
+    @PostMapping("/hold")
+    public ResponseEntity<?> createAppointmentHold(@RequestBody BookAppointmentRequest request) {
+        try {
+
+            String holdId = appointmentService.createAppointmentHold(
+                    request.getPatientId(),
+                    request.getDoctorId(),
+                    request.getDate(),
+                    request.getStartTime(),
+                    request.getReason()
+            );
+
+            return ResponseEntity.ok().body(holdId);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 //    For cancelling appointment with doctor by patient
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<?> cancelAppointment(@PathVariable Long appointmentId, Principal principal) {

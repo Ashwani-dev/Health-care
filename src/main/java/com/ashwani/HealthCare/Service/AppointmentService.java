@@ -1,18 +1,12 @@
 package com.ashwani.HealthCare.Service;
 
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
-import com.ashwani.HealthCare.DTO.VideoSession.VideoSession;
-import com.ashwani.HealthCare.Entity.AppointmentEntity;
-import com.ashwani.HealthCare.Entity.DoctorAvailability;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.PatientEntity;
-import com.ashwani.HealthCare.Repository.AppointmentRepository;
-import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
-import com.ashwani.HealthCare.Repository.DoctorRepository;
-import com.ashwani.HealthCare.Repository.PatientRepository;
+import com.ashwani.HealthCare.Entity.*;
+import com.ashwani.HealthCare.Repository.*;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import com.ashwani.HealthCare.specifications.AppointmentSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -22,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,21 +24,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class AppointmentService {
-    @Autowired
-    private AppointmentRepository appointmentRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
+    private final EmailService emailService;
+    private final AppointmentHoldRepository appointmentHoldRepository;
 
-    @Autowired
-    private DoctorAvailabilityRepository doctorAvailabilityRepository;
-
-    @Autowired
-    private DoctorRepository doctorRepository;
-
-    @Autowired
-    private PatientRepository patientRepository;
-
-    @Autowired
-    private EmailService emailService;
 
     private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
         return new PatientAppointmentResponse(
@@ -59,6 +49,49 @@ public class AppointmentService {
                 appointment.getDescription(),
                 appointment.getCreatedAt()
         );
+    }
+
+    public String createAppointmentHold(Long patientId, Long doctorId, LocalDate date,
+                                        LocalTime startTime, String description) throws Exception {
+
+        // Validate availability first
+        DoctorEntity doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
+
+        if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
+            throw new Exception("Time slot already booked");
+        }
+
+        // Check if slot is within doctor's availability
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        List<DoctorAvailability> availabilities = doctorAvailabilityRepository.findByDoctorAndDayOfWeek(doctor, dayOfWeek);
+
+        boolean isAvailable = availabilities.stream()
+                .anyMatch(av -> av.getIsAvailable() &&
+                        !startTime.isBefore(av.getStartTime()) &&
+                        !startTime.isAfter(av.getEndTime()));
+
+        if (!isAvailable) {
+            throw new Exception("Doctor is not available at this time");
+        }
+
+        // Create and save the hold entity
+        AppointmentHold hold = new AppointmentHold();
+        hold.setPatientId(patientId);
+        hold.setDoctorId(doctorId);
+        hold.setDate(date);
+        hold.setStartTime(startTime);
+        hold.setReason(description);
+        hold.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+        // The @PrePersist will generate the holdReference automatically
+        AppointmentHold savedHold = appointmentHoldRepository.save(hold);
+
+        log.info("Creating appointment hold for patient: {}, doctor: {}, at: {} {}",
+                patientId, doctorId, date, startTime);
+
+        // Return the readable reference (e.g., "hold_a1b2c3d4")
+        return savedHold.getHoldReference();
     }
 
     @Transactional

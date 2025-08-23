@@ -29,4 +29,11 @@ public class PaymentEntity {
     private String transactionTime; // Time of payment
     @Column(name = "order_amount")
     private BigDecimal orderAmount;
+
+    @Column(name = "patient_id", nullable = false) // Make it mandatory
+    private Long patientId;
+
+    // Only store the reference, not the data
+    private String appointmentHoldReference;
+
 }

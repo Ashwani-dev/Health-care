@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "appointments")
@@ -38,13 +39,17 @@ public class AppointmentEntity {
     @Column
     private String status = "SCHEDULED";
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "payment_id", unique = true)
+    private PaymentEntity paymentDetails;
+
     private String description;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "cancelled_at")
-    private LocalDateTime cancelledAt;
+    private OffsetDateTime cancelledAt;
 
     @Column
     private Long cancelledBy;
@@ -86,7 +91,7 @@ public class AppointmentEntity {
         }
 
         this.status = "CANCELLED";
-        this.cancelledAt = LocalDateTime.now();
+        this.cancelledAt = OffsetDateTime.now();
         this.cancelledBy = cancelledByUser;
     }
 

@@ -1,6 +1,7 @@
 package com.ashwani.HealthCare.Service;
 
 
+import com.ashwani.HealthCare.DTO.Payment.PaymentCompletedEvent;
 import com.ashwani.HealthCare.DTO.Payment.PaymentRequest;
 import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
@@ -16,6 +17,10 @@ import com.cashfree.pg.model.OrderMeta;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.core.MessagePropertiesBuilder;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +51,7 @@ public class PaymentService {
 
     private final Cashfree cashfree;
     private final PaymentRepository paymentRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public PaymentResponse initiatePayment(PaymentRequest paymentRequest) throws ApiException {
         // Construct the customer details
@@ -73,6 +79,8 @@ public class PaymentService {
         PaymentEntity payment = new PaymentEntity();
         payment.setOrderId(response.getData().getOrderId());
         payment.setStatus("PENDING");
+        payment.setPatientId(Long.parseLong(paymentRequest.getCustomerId()));
+        payment.setAppointmentHoldReference(paymentRequest.getAppointmentHoldReference());
 
         paymentRepository.save(payment);
 
@@ -98,7 +106,6 @@ public class PaymentService {
         try {
             // Check if this is a test webhook (contains test data)
             if (isTestWebhook(payload)) {
-                log.info("Test webhook received: {}", payload.getType());
                 return;
             }
 
@@ -119,6 +126,9 @@ public class PaymentService {
             }
 
             // 3. Update payment status
+            String previousStatus = payment.getStatus();
+            String newStatus = payload.getOrderStatus();
+
             payment.setStatus(payload.getOrderStatus());
             payment.setReferenceId(payload.getReferenceId());
             payment.setPaymentMode(payload.getPaymentMode());
@@ -127,11 +137,40 @@ public class PaymentService {
 
             // 4. Save the updated record
             paymentRepository.save(payment);
-            log.info("Payment webhook processed successfully: orderId={}, status={}", 
-                    payload.getOrderId(), payload.getOrderStatus());
+
+            // Only publish an event if the payment has just been successfully completed
+            if (isSuccessfulStatus(newStatus) && !isSuccessfulStatus(previousStatus)){
+                try {
+                    // Create the event object with all necessary data
+                    PaymentCompletedEvent event = new PaymentCompletedEvent();
+                    event.setOrderId(payload.getOrderId());
+                    event.setReferenceId(payload.getReferenceId());
+                    event.setCustomerId(payment.getPatientId().toString());
+                    event.setOrderAmount(payload.getOrderAmount());
+                    event.setPaymentMode(payload.getPaymentMode());
+                    event.setAppointmentHoldReference(payment.getAppointmentHoldReference());
+
+                    // Publish the event to RabbitMQ
+                    // When sending the message, set TTL (10 minutes = 600000 milliseconds)
+                    MessageProperties props = MessagePropertiesBuilder.newInstance()
+                            .setContentType(MessageProperties.CONTENT_TYPE_JSON)
+                            .setExpiration("600000")
+                            .build();
+
+                    Message message = rabbitTemplate.getMessageConverter().toMessage(event, props);
+                    rabbitTemplate.send("payment.completed", message);
+                    // PaymentCompletedEvent published successfully
+                } catch (Exception e) {
+                    // Log the error but don't re-throw it and cause the webhook to fail.
+                    // Cashfree will retry the webhook if we return an error code.
+                    // We don't want that just because our messaging is down.
+                    log.error("Failed to publish RabbitMQ event for order: {}", payload.getOrderId(), e);
+                }
+            }
             
         } catch (Exception e) {
             log.error("Error processing webhook for orderId: {}", payload.getOrderId(), e);
+            // Re-throw the exception so Cashfree knows the webhook failed and will retry
             throw e;
         }
     }
@@ -199,6 +238,13 @@ public class PaymentService {
         } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
             throw new RuntimeException("Failed to compute HMAC SHA256", ex);
         }
+    }
+
+    // Helper method to define what constitutes a "successful" payment
+    private boolean isSuccessfulStatus(String status) {
+        if (status == null) return false;
+        return status.equalsIgnoreCase("PAID") ||
+                status.equalsIgnoreCase("SUCCESS");
     }
 }
 

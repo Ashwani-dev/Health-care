@@ -11,4 +11,5 @@ public class PaymentRequest {
     private String customerPhone;
     private String customerEmail;
     private BigDecimal amount;
+    private String appointmentHoldReference;
 }
