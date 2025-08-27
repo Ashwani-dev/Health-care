@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final EmailService emailService;
     private final AppointmentHoldRepository appointmentHoldRepository;
+    private final PaymentRepository paymentRepository;
 
 
     private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
@@ -96,12 +98,19 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentEntity bookAppointment(Long patientId, Long doctorId, LocalDate date,
-                                             LocalTime startTime, String description) throws Exception {
+                                             LocalTime startTime, String description, Long paymentId) throws Exception {
         PatientEntity patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));
 
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
+
+        PaymentEntity payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment is not found"));
+
+        if(!Objects.equals(payment.getStatus(), "SUCCESS")){
+            throw new Exception("Payment is not completed");
+        }
 
         // Check if slot is available
         if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
@@ -132,6 +141,7 @@ public class AppointmentService {
         appointment.setEndTime(endTime);
         appointment.setStatus("SCHEDULED");
         appointment.setDescription(description);
+        appointment.setPaymentDetails(payment);
         appointmentRepository.save(appointment);
 
         emailService.sendAppointmentConfirmation(

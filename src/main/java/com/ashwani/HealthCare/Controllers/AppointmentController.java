@@ -7,7 +7,6 @@ import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -32,7 +31,11 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
-//    For booking appointment with doctor by patient
+    /**
+     * Book an appointment with a doctor
+     * @param request Appointment booking request
+     * @return Created appointment details or validation error
+     */
     @PostMapping("/book")
     public ResponseEntity<?> bookAppointment(@RequestBody BookAppointmentRequest request){
         try {
@@ -41,7 +44,8 @@ public class AppointmentController {
                     request.getDoctorId(),
                     request.getDate(),
                     request.getStartTime(),
-                    request.getReason()
+                    request.getReason(),
+                    -1L
             );
             return ResponseEntity.ok(appointment);
         } catch (Exception e) {
@@ -49,10 +53,12 @@ public class AppointmentController {
         }
     }
 
-    /*
-    For creating a hold appointment which will be replica of book appointment
-    will be deleted later after appointment book
-    */
+    /**
+     * Create an appointment hold (temporary reservation)
+     * Useful to reserve a slot during payment workflow
+     * @param request Appointment booking request
+     * @return Hold identifier string
+     */
     @PostMapping("/hold")
     public ResponseEntity<?> createAppointmentHold(@RequestBody BookAppointmentRequest request) {
         try {
@@ -72,7 +78,12 @@ public class AppointmentController {
         }
     }
 
-//    For cancelling appointment with doctor by patient
+    /**
+     * Cancel an existing appointment by the patient
+     * @param appointmentId Appointment ID to cancel
+     * @param principal Authenticated user principal
+     * @return Success or error details
+     */
     @DeleteMapping("/{appointmentId}")
     public ResponseEntity<?> cancelAppointment(@PathVariable Long appointmentId, Principal principal) {
         try {
@@ -96,7 +107,16 @@ public class AppointmentController {
         }
     }
 
-//    Doctor can access all of his/her scheduled appointment
+    /**
+     * Get paginated appointments for a doctor
+     * @param doctorId Doctor ID (path)
+     * @param appointmentDate Optional date filter (YYYY-MM-DD)
+     * @param startTime Optional start time filter (HH:MM:SS)
+     * @param status Optional status filter
+     * @param pageable Pageable configuration (defaults: sort by date ASC)
+     * @param assembler HATEOAS assembler
+     * @return PagedModel of patient appointment responses
+     */
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getDoctorAppointments(
             @PathVariable Long doctorId,
@@ -112,7 +132,16 @@ public class AppointmentController {
         return ResponseEntity.ok(assembler.toModel(appointments));
     }
 
-//    Patient can access all of his/her scheduled appointment
+    /**
+     * Get paginated appointments for a patient
+     * @param patientId Patient ID (path)
+     * @param appointmentDate Optional date filter (YYYY-MM-DD)
+     * @param startTime Optional start time filter (HH:MM:SS)
+     * @param status Optional status filter
+     * @param pageable Pageable configuration (defaults: sort by date ASC)
+     * @param assembler HATEOAS assembler
+     * @return PagedModel of patient appointment responses
+     */
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getPatientAppointments(
             @PathVariable Long patientId,
@@ -129,6 +158,12 @@ public class AppointmentController {
     }
 
     @GetMapping("availability/{doctorId}")
+    /**
+     * Get available time slots for a specific doctor on a date
+     * @param doctorId Doctor ID
+     * @param date Date (YYYY-MM-DD)
+     * @return List of available time slots
+     */
     public ResponseEntity<List<TimeSlot>> getAvailableSlots(
             @PathVariable Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

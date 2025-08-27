@@ -32,6 +32,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import com.ashwani.HealthCare.specifications.PaymentSpecifications;
 
 @Service
 @RequiredArgsConstructor
@@ -149,6 +153,7 @@ public class PaymentService {
                     event.setOrderAmount(payload.getOrderAmount());
                     event.setPaymentMode(payload.getPaymentMode());
                     event.setAppointmentHoldReference(payment.getAppointmentHoldReference());
+                    event.setPaymentId(payment.getId());
 
                     // Publish the event to RabbitMQ
                     // When sending the message, set TTL (10 minutes = 600000 milliseconds)
@@ -177,6 +182,47 @@ public class PaymentService {
 
     public List<PaymentEntity> getAllOrders() {
         return paymentRepository.findAll();
+    }
+
+    /**
+     * Get paginated list of payments with optional filtering
+     * @param status Payment status filter (optional)
+     * @param paymentMode Payment mode filter (optional)
+     * @param patientId Patient ID filter (optional)
+     * @param minAmount Minimum amount filter (optional)
+     * @param maxAmount Maximum amount filter (optional)
+     * @param pageable Pagination and sorting information
+     * @return Page of PaymentEntity objects
+     */
+    public Page<PaymentEntity> getPaginatedPayments(
+            String status,
+            String paymentMode,
+            Long patientId,
+            java.math.BigDecimal minAmount,
+            java.math.BigDecimal maxAmount,
+            Pageable pageable) {
+        
+        // Build specification based on filters
+        Specification<PaymentEntity> spec = Specification.where(null);
+        
+        if (status != null && !status.isEmpty()) {
+            spec = spec.and(PaymentSpecifications.hasStatus(status));
+        }
+        
+        if (paymentMode != null && !paymentMode.isEmpty()) {
+            spec = spec.and(PaymentSpecifications.hasPaymentMode(paymentMode));
+        }
+        
+        if (patientId != null) {
+            spec = spec.and(PaymentSpecifications.hasPatientId(patientId));
+        }
+        
+        if (minAmount != null || maxAmount != null) {
+            spec = spec.and(PaymentSpecifications.amountBetween(minAmount, maxAmount));
+        }
+        
+        // Return paginated results ordered by ID descending (latest first)
+        return paymentRepository.findAll(spec, pageable);
     }
 
     private boolean isSignatureValid(PaymentWebhookPayload payload, String signature, String rawBody) {

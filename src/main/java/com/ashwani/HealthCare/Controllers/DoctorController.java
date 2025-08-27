@@ -28,6 +28,11 @@ public class DoctorController {
 
 
     @GetMapping("/profile")
+    /**
+     * Get the authenticated doctor's profile
+     * @param principal Current authenticated doctor
+     * @return Doctor profile details
+     */
     public ResponseEntity<DoctorProfile> getDoctorProfile(Principal principal) {
         // Fetch doctor details from database
         long userId = Long.parseLong(principal.getName());
@@ -41,6 +46,12 @@ public class DoctorController {
     }
 
     @PutMapping("/profile")
+    /**
+     * Update the authenticated doctor's profile
+     * @param updateRequest Profile update payload
+     * @param principal Current authenticated doctor
+     * @return Updated doctor profile details
+     */
     public ResponseEntity<DoctorProfile> updateDoctorProfile(
             @Valid @RequestBody DoctorProfileUpdateRequest updateRequest,
             Principal principal) {
@@ -53,6 +64,11 @@ public class DoctorController {
 
     // Single-search-bar endpoint
     @GetMapping("/search")
+    /**
+     * Search doctors using a single free-text query
+     * @param q Optional search string
+     * @return List of matching doctors
+     */
     public ResponseEntity<List<DoctorDto>> searchDoctorUsingSearchBar(
             @RequestParam(required = false) String q){
         return ResponseEntity.ok(doctorService.searchDoctors(q, null));
@@ -60,6 +76,11 @@ public class DoctorController {
 
     // Multi-field filter endpoint
     @GetMapping("/filter")
+    /**
+     * Filter doctors by multiple fields
+     * @param specialization Optional specialization filter
+     * @return List of doctors matching filters
+     */
     public List<DoctorDto> searchDoctorUsingFilters(
             @RequestParam(required = false) String specialization
     ) {

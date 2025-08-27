@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -89,23 +88,29 @@ public class VideoCallService {
     }
 
     public String getAccessToken(Long appointmentId, String userType, Long userId) {
-        VideoCallSessionsEntity session = videoCallSessionsRepository.findByAppointmentId(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Video session not found"));
-
-        // Validate user is either patient or doctor for this appointment
-        if (userType.equals("PATIENT")) {
-            if (!session.getAppointment().getPatient().getId().equals(userId)) {
-                throw new RuntimeException("Unauthorized access");
-            }
-            return session.getPatientAccessToken();
-        } else if (userType.equals("DOCTOR")) {
-            if (!session.getAppointment().getDoctor().getId().equals(userId)) {
-                throw new RuntimeException("Unauthorized access");
-            }
-            return session.getDoctorAccessToken();
-        } else {
-            throw new RuntimeException("Invalid user type");
+        // Input validation
+        if (appointmentId == null || userId == null) {
+            throw new IllegalArgumentException("Appointment ID and User ID cannot be null");
         }
+
+        // Check if video session exists for the appointment
+        if (!videoCallSessionsRepository.existsByAppointmentId(appointmentId)) {
+            throw new RuntimeException("Video session not found for appointment ID: " + appointmentId);
+        }
+
+        // Check if user has access to this appointment
+        if (!videoCallSessionsRepository.existsByAppointmentIdAndUserId(appointmentId, userId)) {
+            throw new RuntimeException("Unauthorized: You don't have access to this appointment");
+        }
+
+        return switch (userType) {
+            case "PATIENT" -> videoCallSessionsRepository.findPatientAccessToken(appointmentId, userId)
+                    .orElseThrow(() -> createSecurityException("Patient access denied", appointmentId, userId));
+            case "DOCTOR" -> videoCallSessionsRepository.findDoctorAccessToken(appointmentId, userId)
+                    .orElseThrow(() -> createSecurityException("Doctor access denied", appointmentId, userId));
+            default ->
+                    throw new IllegalArgumentException("Invalid user type: " + userType + ". Must be 'PATIENT' or 'DOCTOR'");
+        };
     }
 
     @Transactional
@@ -287,5 +292,13 @@ public class VideoCallService {
 
     private VideoSession mapToVideoSession(VideoCallSessionsEntity entity) {
         return mapper.map(entity, VideoSession.class);
+    }
+
+    private RuntimeException createSecurityException(String message, Long appointmentId, Long userId) {
+        // Log the actual details for debugging (use your logging framework)
+        System.err.println("Security violation: " + message + " - Appointment: " + appointmentId + ", User: " + userId);
+
+        // Return generic message to avoid information leakage
+        return new RuntimeException("Access denied");
     }
 }

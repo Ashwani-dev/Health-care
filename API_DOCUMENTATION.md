@@ -489,6 +489,16 @@ x-webhook-signature: <signature> (optional, configurable)
 Webhook processed successfully
 ```
 
+### Get Payment Status
+**GET** `/payments/status/{orderId}`
+
+Get the latest known status for a payment order.
+
+**Response (200 OK):**
+```
+Your payment status is <STATUS>
+```
+
 ### Debug Orders
 **GET** `/payments/debug/orders`
 
@@ -506,6 +516,40 @@ Get all payment orders (for debugging purposes).
     "createdAt": "2024-01-10T10:00:00Z"
   }
 ]
+```
+
+### Paginated Payments for a Patient (with filtering)
+**GET** `/payments/payment-details/{id}`
+
+Retrieve paginated payments for a specific patient with optional filters. Defaults to page size 10.
+
+**Path Parameters:**
+- `id` (required): Patient ID
+
+**Query Parameters:**
+- `page` (optional): Page number (0-based, default: 0)
+- `size` (optional): Page size (default: 10)
+- `status` (optional): Filter by status, e.g., PAID, PENDING, FAILED
+- `paymentMode` (optional): Filter by mode, e.g., UPI, CARD
+- `minAmount` (optional): Minimum order amount
+- `maxAmount` (optional): Maximum order amount
+
+**Examples:**
+- Basic: `GET /payments/payment-details/123`
+- Paged: `GET /payments/payment-details/123?page=1&size=5`
+- Filtered: `GET /payments/payment-details/123?status=PAID&paymentMode=UPI`
+
+**Response (200 OK):**
+```json
+{
+  "content": [ /* Payment objects */ ],
+  "totalElements": 45,
+  "totalPages": 5,
+  "size": 10,
+  "number": 0,
+  "first": true,
+  "last": false
+}
 ```
 
 ---

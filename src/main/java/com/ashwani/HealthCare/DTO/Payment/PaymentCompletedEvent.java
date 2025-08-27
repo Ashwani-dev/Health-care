@@ -16,6 +16,7 @@ public class PaymentCompletedEvent implements Serializable {
     private String customerId;
     private BigDecimal orderAmount;
     private String paymentMode;
+    private Long paymentId;
 
     private String appointmentHoldReference;
 

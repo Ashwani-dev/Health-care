@@ -43,7 +43,8 @@ public class PaymentEventListener {
                     hold.getDoctorId(),
                     hold.getDate(),
                     hold.getStartTime(),
-                    hold.getReason()
+                    hold.getReason(),
+                    event.getPaymentId()
             );
 
             // 5. Clean up the hold

@@ -18,6 +18,14 @@ public class AvailabilityController {
     private final AvailabilityService availabilityService;
 
     @PostMapping("/{doctorId}")
+    /**
+     * Set availability slots for a doctor
+     * @param doctorId Doctor's ID (path)
+     * @param requests List of availability requests to set
+     * @param principal Current authenticated user (doctor)
+     * @return List of created/updated availability slots
+     * @throws AccessDeniedException if a doctor tries to modify another doctor's availability
+     */
     public ResponseEntity<List<AvailabilityResponseDto>> setAvailability(
             @PathVariable Long doctorId,
             @RequestBody List<AvailabilityRequestDto> requests,
@@ -33,6 +41,11 @@ public class AvailabilityController {
     }
 
     @GetMapping("/{doctorId}")
+    /**
+     * Get availability slots for a doctor
+     * @param doctorId Doctor's ID
+     * @return List of availability slots
+     */
     public ResponseEntity<List<AvailabilityResponseDto>> getAvailability(
             @PathVariable Long doctorId) {
         List<AvailabilityResponseDto> availabilities = availabilityService.getDoctorAvailability(doctorId);
@@ -40,6 +53,14 @@ public class AvailabilityController {
     }
 
     @DeleteMapping("/{doctorId}/{slotId}")
+    /**
+     * Delete a specific availability slot for a doctor
+     * @param doctorId Doctor's ID
+     * @param slotId Slot ID to delete
+     * @param principal Current authenticated user (doctor)
+     * @return 204 No Content on success
+     * @throws AccessDeniedException if a doctor tries to delete another doctor's slot
+     */
     public ResponseEntity<Void> deleteAvailabilitySlot(
             @PathVariable Long doctorId,
             @PathVariable Long slotId,

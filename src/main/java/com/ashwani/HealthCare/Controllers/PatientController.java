@@ -9,10 +9,8 @@ import com.ashwani.HealthCare.Service.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 
@@ -26,6 +24,11 @@ public class PatientController {
     private final ModelMapper modelMapper;
 
     @GetMapping("/profile")
+    /**
+     * Get the authenticated patient's profile
+     * @param principal Current authenticated patient
+     * @return Patient profile details
+     */
     public ResponseEntity<PatientProfile> getPatientProfile(Principal principal) {
         // Fetch patient details from database
         Long userId = Long.parseLong(principal.getName());
@@ -39,6 +42,12 @@ public class PatientController {
     }
 
     @PutMapping("/profile")
+    /**
+     * Update the authenticated patient's profile
+     * @param updateRequest Profile update payload
+     * @param principal Current authenticated patient
+     * @return Updated patient profile
+     */
     public ResponseEntity<PatientProfile> updatePatientProfile(
             @Valid @RequestBody PatientProfileUpdateRequest updateRequest,
             Principal principal) {

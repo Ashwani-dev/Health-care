@@ -3,15 +3,11 @@ package com.ashwani.HealthCare.Service;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.PatientEntity;
-import com.ashwani.HealthCare.Repository.AppointmentRepository;
-import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
-import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
