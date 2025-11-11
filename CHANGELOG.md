@@ -8,26 +8,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Comprehensive documentation suite
-- API documentation with examples
-- Deployment guides for multiple environments
+- Comprehensive documentation suite with 11 documentation files
+- API documentation with all current endpoints and examples
+- Deployment configuration guide with profile-based setup
 - Developer guidelines and coding standards
-- Quick reference guide
-- Debug endpoint for payment orders (`/api/payments/debug/orders`)
+- Quick reference guide with all endpoints
+- Spring Boot Actuator for health checks and monitoring
+- Environment variable template (`env.example`)
+- Profile-based configuration (dev, docker, prod)
+- Appointment hold functionality for payment workflow
+- Paginated payment endpoints with filtering
+- Video call session management endpoints
+- Doctor search and filter endpoints
+- Availability management endpoints
 
 ### Changed
-- Updated README with detailed project information
+- Updated all documentation to match current codebase
 - Enhanced error handling across all endpoints
 - Improved logging configuration
-- **Payment API Updates**:
-  - Changed `/api/payments/create` to `/api/payments/initiate`
-  - Updated `/api/payments/webhook` to `/api/payments/webhook/cashfree`
-  - Updated payment request/response structure
-  - Added webhook signature validation (configurable)
+- **Authentication API**:
+  - Separate endpoints for patient and doctor registration/login
+  - `/api/auth/patient/register`, `/api/auth/patient/login`
+  - `/api/auth/doctor/register`, `/api/auth/doctor/login`
+- **Payment API**:
+  - Endpoint: `/api/payments/initiate`
+  - Webhook: `/api/payments/webhook/cashfree`
+  - Added `/api/payments/status/{orderId}`
+  - Added `/api/payments/payment-details/{id}` with pagination
+- **Video Call API**:
+  - Updated to `/api/video-call/session/{appointmentId}`
+  - Added `/api/video-call/token/{appointmentId}`
+  - Added `/api/video-call/end/{appointmentId}`
+  - Added `/api/video-call/webhook`
+- **Doctor API**:
+  - Changed to `/api/doctor/profile` (authenticated)
+  - Added `/api/doctor/search` and `/api/doctor/filter`
+- **Patient API**:
+  - Changed to `/api/patient/profile` (authenticated)
+- **Availability API**:
+  - New endpoints: `/api/availability/{doctorId}`
+  - Added delete slot endpoint
 
 ### Fixed
-- Documentation formatting and consistency
-- Payment webhook endpoint path consistency
+- Documentation formatting and consistency across all files
+- API endpoint paths to match actual implementation
+- Environment variable references
+- Configuration file organization
 
 ---
 

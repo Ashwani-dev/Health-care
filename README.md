@@ -26,79 +26,183 @@ A comprehensive Spring Boot application for managing healthcare appointments, do
 ### Prerequisites
 - Java 17 or higher
 - Maven 3.6+
-- PostgreSQL 12+
+- PostgreSQL 12+ (local or cloud)
+- RabbitMQ (local or cloud)
 - Node.js (for frontend, if applicable)
 
-### Environment Setup
+### Quick Setup (5 Minutes)
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd HealthCare
-   ```
+#### Step 1: Clone and Setup Environment
 
-2. **Create environment variables**
-   Create a `.env` file in the root directory with the following variables:
-   ```env
-   # Database Configuration
-   DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_db
-   DB_USERNAME=your_db_username
-   DB_PASSWORD=your_db_password
-   
-   # JWT Configuration
-   JWT_SECRET=your_jwt_secret_key_here
-   
-   # Email Configuration
-   EMAIL_ID=your_email@gmail.com
-   EMAIL_PASSWORD=your_app_password
-   
-   # Cashfree Payment Configuration
-   APP_ID=your_cashfree_app_id
-   SECRET_KEY=your_cashfree_secret_key
-   ```
+```bash
+# Clone the repository
+git clone <repository-url>
+cd HealthCare
 
-3. **Build and run the application**
-   ```bash
-   mvn clean install
-   mvn spring-boot:run
-   ```
+# Copy environment template
+cp env.example .env
+```
 
-4. **Access the application**
-   - Application URL: `http://localhost:8080`
-   - API Base URL: `http://localhost:8080/api`
+#### Step 2: Configure Environment Variables
+
+Edit `.env` file with your values. **Minimum required variables**:
+
+```env
+# Database Configuration
+DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_db
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+
+# JWT Secret (generate: openssl rand -base64 32)
+JWT_SECRET=your-secret-key-here
+
+# RabbitMQ Configuration
+RABBITMQ_URL=amqp://localhost:5672
+RABBITMQ_USERNAME=rabbitmq_user
+RABBITMQ_PASSWORD=rabbitmq_password
+
+# Email Configuration (Gmail example)
+EMAIL_ID=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+
+# Twilio Configuration (get from https://console.twilio.com/)
+TWILIO_ACCOUNT_SID=your-account-sid
+TWILIO_AUTH_TOKEN=your-auth-token
+TWILIO_API_KEY=your-api-key
+TWILIO_API_SECRET=your-api-secret
+
+# Cashfree Configuration (get from https://www.cashfree.com/)
+APP_ID=your-app-id
+SECRET_KEY=your-secret-key
+
+# Application URLs
+FRONTEND_BASE_URL=http://localhost:5173
+BACKEND_BASE_URL=http://localhost:8080
+```
+
+#### Step 3: Set Up Database
+
+**Option A: Local PostgreSQL**
+```bash
+createdb healthcare_db
+# Or using psql:
+psql -U postgres -c "CREATE DATABASE healthcare_db;"
+```
+
+**Option B: Docker PostgreSQL**
+```bash
+docker run -d --name postgres \
+  -e POSTGRES_DB=healthcare_db \
+  -e POSTGRES_USER=healthcare_user \
+  -e POSTGRES_PASSWORD=your_password \
+  -p 5432:5432 \
+  postgres:15-alpine
+```
+
+#### Step 4: Set Up RabbitMQ
+
+**Docker RabbitMQ (Recommended)**
+```bash
+docker run -d --name rabbitmq \
+  -p 5672:5672 -p 15672:15672 \
+  -e RABBITMQ_DEFAULT_USER=rabbitmq_user \
+  -e RABBITMQ_DEFAULT_PASS=rabbitmq_password \
+  rabbitmq:3-management-alpine
+```
+
+#### Step 5: Run Application
+
+**Development Mode**:
+```bash
+export SPRING_PROFILES_ACTIVE=dev
+mvn spring-boot:run
+```
+
+**Or Build and Run**:
+```bash
+mvn clean package
+java -jar target/HealthCare-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+```
+
+#### Step 6: Verify Installation
+
+- **Application**: http://localhost:8080
+- **Health Check**: http://localhost:8080/actuator/health
+- **RabbitMQ Management**: http://localhost:15672 (user: `rabbitmq_user`, pass: `rabbitmq_password`)
+
+### Docker Quick Start
+
+```bash
+# Configure environment
+cp env.example .env
+# Edit .env with your values
+
+# Run with Docker Compose
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+docker-compose logs -f healthcare-app
+```
+
+### Configuration Profiles
+
+The application supports three profiles:
+
+| Profile | Use Case | Activation |
+|---------|----------|------------|
+| `dev` | Local development | `SPRING_PROFILES_ACTIVE=dev` |
+| `docker` | Docker containers | `SPRING_PROFILES_ACTIVE=docker` |
+| `prod` | Production | `SPRING_PROFILES_ACTIVE=prod` |
+
+For detailed configuration, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
 ## 📚 API Documentation
 
 ### Authentication Endpoints
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/refresh` - Refresh JWT token
+- `POST /api/auth/patient/register` - Register a new patient
+- `POST /api/auth/patient/login` - Patient login
+- `POST /api/auth/doctor/register` - Register a new doctor
+- `POST /api/auth/doctor/login` - Doctor login
 
 ### Appointment Endpoints
 - `POST /api/appointments/book` - Book a new appointment
-- `DELETE /api/appointments/{id}` - Cancel an appointment
-- `GET /api/appointments/doctor/{doctorId}` - Get doctor's appointments
-- `GET /api/appointments/patient/{patientId}` - Get patient's appointments
+- `POST /api/appointments/hold` - Create appointment hold (temporary reservation)
+- `DELETE /api/appointments/{appointmentId}` - Cancel an appointment
+- `GET /api/appointments/doctor/{doctorId}` - Get doctor's appointments (paginated)
+- `GET /api/appointments/patient/{patientId}` - Get patient's appointments (paginated)
 - `GET /api/appointments/availability/{doctorId}` - Get available time slots
 
 ### Doctor Endpoints
-- `GET /api/doctors` - Get all doctors
-- `GET /api/doctors/{id}` - Get doctor by ID
-- `PUT /api/doctors/{id}` - Update doctor profile
-- `POST /api/doctors/availability` - Set doctor availability
+- `GET /api/doctor/profile` - Get authenticated doctor's profile
+- `PUT /api/doctor/profile` - Update authenticated doctor's profile
+- `GET /api/doctor/search` - Search doctors (query: `?q=`)
+- `GET /api/doctor/filter` - Filter doctors (query: `?specialization=`)
 
 ### Patient Endpoints
-- `GET /api/patients/{id}` - Get patient by ID
-- `PUT /api/patients/{id}` - Update patient profile
+- `GET /api/patient/profile` - Get authenticated patient's profile
+- `PUT /api/patient/profile` - Update authenticated patient's profile
+
+### Availability Endpoints
+- `POST /api/availability/{doctorId}` - Set doctor availability
+- `GET /api/availability/{doctorId}` - Get doctor availability
+- `DELETE /api/availability/{doctorId}/{slotId}` - Delete availability slot
 
 ### Payment Endpoints
 - `POST /api/payments/initiate` - Initiate payment order
 - `POST /api/payments/webhook/cashfree` - Payment webhook handler
+- `GET /api/payments/status/{orderId}` - Get payment status
 - `GET /api/payments/debug/orders` - Debug orders (development)
+- `GET /api/payments/payment-details/{id}` - Get paginated payments for patient
 
 ### Video Call Endpoints
-- `POST /api/video/create-session` - Create video call session
-- `POST /api/video/join-session` - Join video call session
+- `POST /api/video-call/session/{appointmentId}` - Create video call session
+- `GET /api/video-call/session/{appointmentId}` - Get video call session
+- `GET /api/video-call/token/{appointmentId}` - Get access token for joining
+- `POST /api/video-call/end/{appointmentId}` - End video call session
+- `POST /api/video-call/webhook` - Twilio webhook handler
+
+For detailed API documentation with request/response examples, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md).
 
 ## 🏗️ Architecture
 

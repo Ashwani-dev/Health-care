@@ -27,20 +27,29 @@ This guide provides comprehensive information for developers working on the Heal
 - **Payment Gateway**: Cashfree
 - **Video Calling**: Twilio
 - **Email**: Spring Mail with Thymeleaf
+- **Messaging**: RabbitMQ (Spring AMQP)
+- **Monitoring**: Spring Boot Actuator
 
 ### Project Structure
 ```
 src/main/java/com/ashwani/HealthCare/
-├── Config/           # Configuration classes
-├── Controllers/      # REST API controllers
-├── DTO/             # Data Transfer Objects
-├── Entity/          # JPA entities
-├── Repository/      # Data access layer
-├── Service/         # Business logic layer
-├── Utility/         # Utility classes
-├── Filter/          # Security filters
-├── ExceptionHandlers/ # Global exception handling
-└── specifications/  # JPA specifications
+├── Config/              # Configuration classes (Security, RabbitMQ, Cashfree, Twilio)
+├── Controllers/         # REST API controllers
+│   ├── AppointmentController.java
+│   ├── AuthController.java
+│   ├── AvailabilityController.java
+│   ├── DoctorController.java
+│   ├── PatientController.java
+│   ├── PaymentController.java
+│   └── VideoCallController.java
+├── DTO/                 # Data Transfer Objects (organized by feature)
+├── Entity/              # JPA entities
+├── Repository/          # Data access layer (Spring Data JPA)
+├── Service/             # Business logic layer
+├── Utility/             # Utility classes (JWT, TimeSlot)
+├── Filter/              # Security filters (JWT Filter)
+├── ExceptionHandlers/   # Global exception handling
+└── specifications/      # JPA specifications (for dynamic queries)
 ```
 
 ---

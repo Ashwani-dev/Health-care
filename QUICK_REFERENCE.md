@@ -64,41 +64,57 @@ DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_db
 DB_USERNAME=healthcare_user
 DB_PASSWORD=your_password
 
+# RabbitMQ
+RABBITMQ_URL=amqp://localhost:5672
+RABBITMQ_USERNAME=rabbitmq_user
+RABBITMQ_PASSWORD=rabbitmq_password
+
 # JWT
 JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRATION_MS=86400000
 
 # Email
 EMAIL_ID=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
 
+# Twilio
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_API_KEY=your_twilio_api_key
+TWILIO_API_SECRET=your_twilio_api_secret
+
 # Cashfree Payment
 APP_ID=your_cashfree_app_id
 SECRET_KEY=your_cashfree_secret_key
 
-# Application
-SERVER_PORT=8080
-LOGGING_LEVEL=INFO
+# Application URLs
+FRONTEND_BASE_URL=http://localhost:5173
+BACKEND_BASE_URL=http://localhost:8080
+
+# Spring Profile
+SPRING_PROFILE=dev
 ```
 
-### Environment-Specific Files
-- `.env.dev` - Development environment
-- `.env.staging` - Staging environment  
-- `.env.prod` - Production environment
+### Environment Configuration
+- Copy `env.example` to `.env` and fill in your values
+- Use `SPRING_PROFILE=dev` for development
+- Use `SPRING_PROFILE=docker` for Docker deployment
+- Use `SPRING_PROFILE=prod` for production
 
 ## 🔗 API Endpoints Quick Reference
 
 ### Authentication
 ```
-POST   /api/auth/register     - Register user
-POST   /api/auth/login        - Login user
-POST   /api/auth/refresh      - Refresh token
+POST   /api/auth/patient/register      - Register patient
+POST   /api/auth/patient/login         - Login patient
+POST   /api/auth/doctor/register       - Register doctor
+POST   /api/auth/doctor/login          - Login doctor
 ```
 
 ### Appointments
 ```
 POST   /api/appointments/book                    - Book appointment
-DELETE /api/appointments/{id}                    - Cancel appointment
+POST   /api/appointments/hold                    - Create appointment hold
+DELETE /api/appointments/{appointmentId}         - Cancel appointment
 GET    /api/appointments/doctor/{doctorId}       - Get doctor appointments
 GET    /api/appointments/patient/{patientId}     - Get patient appointments
 GET    /api/appointments/availability/{doctorId} - Get available slots
@@ -106,29 +122,41 @@ GET    /api/appointments/availability/{doctorId} - Get available slots
 
 ### Doctors
 ```
-GET    /api/doctors                    - Get all doctors
-GET    /api/doctors/{id}               - Get doctor by ID
-PUT    /api/doctors/{id}               - Update doctor profile
-POST   /api/doctors/availability       - Set availability
+GET    /api/doctor/profile              - Get authenticated doctor profile
+PUT    /api/doctor/profile              - Update authenticated doctor profile
+GET    /api/doctor/search               - Search doctors (query: ?q=)
+GET    /api/doctor/filter               - Filter doctors (query: ?specialization=)
 ```
 
 ### Patients
 ```
-GET    /api/patients/{id}              - Get patient by ID
-PUT    /api/patients/{id}              - Update patient profile
+GET    /api/patient/profile             - Get authenticated patient profile
+PUT    /api/patient/profile             - Update authenticated patient profile
+```
+
+### Availability
+```
+POST   /api/availability/{doctorId}     - Set doctor availability
+GET    /api/availability/{doctorId}     - Get doctor availability
+DELETE /api/availability/{doctorId}/{slotId} - Delete availability slot
 ```
 
 ### Payments
 ```
-POST   /api/payments/initiate          - Initiate payment order
-POST   /api/payments/webhook/cashfree  - Payment webhook
-GET    /api/payments/debug/orders      - Debug orders (development)
+POST   /api/payments/initiate           - Initiate payment order
+POST   /api/payments/webhook/cashfree   - Payment webhook
+GET    /api/payments/status/{orderId}   - Get payment status
+GET    /api/payments/debug/orders       - Debug orders (development)
+GET    /api/payments/payment-details/{id} - Get paginated payments for patient
 ```
 
 ### Video Calls
 ```
-POST   /api/video/create-session       - Create video session
-POST   /api/video/join-session         - Join video session
+POST   /api/video-call/session/{appointmentId}  - Create video session
+GET    /api/video-call/session/{appointmentId}  - Get video session
+GET    /api/video-call/token/{appointmentId}    - Get access token
+POST   /api/video-call/end/{appointmentId}      - End video session
+POST   /api/video-call/webhook                  - Twilio webhook
 ```
 
 ## 🗄️ Database Schema

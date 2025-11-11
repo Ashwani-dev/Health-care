@@ -15,39 +15,38 @@ Authorization: Bearer <your-jwt-token>
 
 ## 🔐 Authentication Endpoints
 
-### Register User
-**POST** `/auth/register`
+### Register Patient
+**POST** `/api/auth/patient/register`
 
-Register a new user (doctor or patient).
+Register a new patient account.
 
 **Request Body:**
 ```json
 {
-  "email": "user@example.com",
+  "name": "John Doe",
+  "email": "patient@example.com",
   "password": "securePassword123",
-  "role": "DOCTOR" // or "PATIENT"
+  "phone": "+1234567890",
+  "dateOfBirth": "1990-01-15",
+  "gender": "MALE",
+  "address": "123 Main St, City, State"
 }
 ```
 
-**Response (201 Created):**
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "role": "DOCTOR",
-  "message": "User registered successfully"
-}
+**Response (200 OK):**
+```
+Patient registered successfully
 ```
 
-### Login User
-**POST** `/auth/login`
+### Login Patient
+**POST** `/api/auth/patient/login`
 
-Authenticate user and receive JWT token.
+Authenticate a patient and receive JWT token.
 
 **Request Body:**
 ```json
 {
-  "email": "user@example.com",
+  "email": "patient@example.com",
   "password": "securePassword123"
 }
 ```
@@ -56,33 +55,63 @@ Authenticate user and receive JWT token.
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "refresh_token_here",
   "expiresIn": 86400000,
   "user": {
     "id": 1,
-    "email": "user@example.com",
-    "role": "DOCTOR"
+    "email": "patient@example.com",
+    "role": "PATIENT"
   }
 }
 ```
 
-### Refresh Token
-**POST** `/auth/refresh`
+### Register Doctor
+**POST** `/api/auth/doctor/register`
 
-Refresh expired JWT token.
+Register a new doctor account.
 
 **Request Body:**
 ```json
 {
-  "refreshToken": "refresh_token_here"
+  "name": "Dr. John Smith",
+  "email": "doctor@example.com",
+  "password": "securePassword123",
+  "phone": "+1234567890",
+  "specialization": "Cardiology",
+  "experience": 10,
+  "consultationFee": 150.00,
+  "bio": "Experienced cardiologist",
+  "address": "123 Medical Center Dr"
+}
+```
+
+**Response (200 OK):**
+```
+Doctor registered successfully
+```
+
+### Login Doctor
+**POST** `/api/auth/doctor/login`
+
+Authenticate a doctor and receive JWT token.
+
+**Request Body:**
+```json
+{
+  "email": "doctor@example.com",
+  "password": "securePassword123"
 }
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "token": "new_jwt_token_here",
-  "expiresIn": 86400000
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 86400000,
+  "user": {
+    "id": 1,
+    "email": "doctor@example.com",
+    "role": "DOCTOR"
+  }
 }
 ```
 
@@ -91,7 +120,7 @@ Refresh expired JWT token.
 ## 🏥 Appointment Endpoints
 
 ### Book Appointment
-**POST** `/appointments/book`
+**POST** `/api/appointments/book`
 
 Book a new appointment with a doctor.
 
@@ -121,10 +150,36 @@ Book a new appointment with a doctor.
 }
 ```
 
-### Cancel Appointment
-**DELETE** `/appointments/{appointmentId}`
+### Create Appointment Hold
+**POST** `/api/appointments/hold`
 
-Cancel an existing appointment.
+Create a temporary appointment hold (useful during payment workflow).
+
+**Request Body:**
+```json
+{
+  "patientId": 1,
+  "doctorId": 2,
+  "date": "2024-01-15",
+  "startTime": "10:00:00",
+  "reason": "Regular checkup"
+}
+```
+
+**Response (200 OK):**
+```
+"hold_123456789"
+```
+
+### Cancel Appointment
+**DELETE** `/api/appointments/{appointmentId}`
+
+Cancel an existing appointment. Requires authentication and ownership verification.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
 
 **Response (200 OK):**
 ```json
@@ -143,8 +198,16 @@ Cancel an existing appointment.
 }
 ```
 
+**Response (403 Forbidden) - Access Denied:**
+```json
+{
+  "error": "You can only cancel your own appointments",
+  "appointmentId": 1
+}
+```
+
 ### Get Doctor Appointments
-**GET** `/appointments/doctor/{doctorId}`
+**GET** `/api/appointments/doctor/{doctorId}`
 
 Get all appointments for a specific doctor with pagination and filtering.
 
@@ -187,7 +250,7 @@ Get all appointments for a specific doctor with pagination and filtering.
 ```
 
 ### Get Patient Appointments
-**GET** `/appointments/patient/{patientId}`
+**GET** `/api/appointments/patient/{patientId}`
 
 Get all appointments for a specific patient with pagination and filtering.
 
@@ -223,12 +286,17 @@ Get all appointments for a specific patient with pagination and filtering.
 ```
 
 ### Get Available Time Slots
-**GET** `/appointments/availability/{doctorId}`
+**GET** `/api/appointments/availability/{doctorId}`
 
 Get available time slots for a doctor on a specific date.
 
 **Query Parameters:**
 - `date` (required): Date in ISO format (YYYY-MM-DD)
+
+**Example:**
+```
+GET /api/appointments/availability/2?date=2024-01-15
+```
 
 **Response (200 OK):**
 ```json
@@ -255,49 +323,15 @@ Get available time slots for a doctor on a specific date.
 
 ## 👨‍⚕️ Doctor Endpoints
 
-### Get All Doctors
-**GET** `/doctors`
+### Get Doctor Profile
+**GET** `/api/doctor/profile`
 
-Get all doctors with pagination and filtering.
+Get the authenticated doctor's profile. Requires authentication.
 
-**Query Parameters:**
-- `specialization` (optional): Filter by specialization
-- `name` (optional): Filter by doctor name
-- `page` (optional): Page number (default: 0)
-- `size` (optional): Page size (default: 20)
-
-**Response (200 OK):**
-```json
-{
-  "_embedded": {
-    "doctorDtoList": [
-      {
-        "id": 1,
-        "name": "Dr. John Smith",
-        "email": "smith@example.com",
-        "specialization": "Cardiology",
-        "experience": 10,
-        "rating": 4.5,
-        "consultationFee": 100.00
-      }
-    ]
-  },
-  "_links": {
-    "self": { "href": "/api/doctors?page=0&size=20" }
-  },
-  "page": {
-    "size": 20,
-    "totalElements": 50,
-    "totalPages": 3,
-    "number": 0
-  }
-}
+**Headers:**
 ```
-
-### Get Doctor by ID
-**GET** `/doctors/{id}`
-
-Get detailed information about a specific doctor.
+Authorization: Bearer <jwt-token>
+```
 
 **Response (200 OK):**
 ```json
@@ -316,9 +350,14 @@ Get detailed information about a specific doctor.
 ```
 
 ### Update Doctor Profile
-**PUT** `/doctors/{id}`
+**PUT** `/api/doctor/profile`
 
-Update doctor profile information.
+Update the authenticated doctor's profile. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
 
 **Request Body:**
 ```json
@@ -344,48 +383,151 @@ Update doctor profile information.
   "experience": 10,
   "consultationFee": 100.00,
   "bio": "Updated bio information",
-  "address": "123 Medical Center Dr, City, State",
-  "message": "Profile updated successfully"
+  "address": "123 Medical Center Dr, City, State"
 }
 ```
 
-### Set Doctor Availability
-**POST** `/doctors/availability`
+### Search Doctors
+**GET** `/api/doctor/search`
 
-Set doctor's availability for specific dates and time slots.
+Search doctors using a single free-text query.
 
-**Request Body:**
-```json
-{
-  "doctorId": 1,
-  "date": "2024-01-15",
-  "startTime": "09:00:00",
-  "endTime": "17:00:00",
-  "isAvailable": true
-}
+**Query Parameters:**
+- `q` (optional): Search string (searches name, specialization, etc.)
+
+**Example:**
+```
+GET /api/doctor/search?q=cardiology
 ```
 
 **Response (200 OK):**
 ```json
-{
-  "id": 1,
-  "doctorId": 1,
-  "date": "2024-01-15",
-  "startTime": "09:00:00",
-  "endTime": "17:00:00",
-  "isAvailable": true,
-  "message": "Availability set successfully"
-}
+[
+  {
+    "id": 1,
+    "name": "Dr. John Smith",
+    "email": "smith@example.com",
+    "specialization": "Cardiology",
+    "experience": 10,
+    "rating": 4.5,
+    "consultationFee": 100.00
+  }
+]
+```
+
+### Filter Doctors
+**GET** `/api/doctor/filter`
+
+Filter doctors by multiple fields.
+
+**Query Parameters:**
+- `specialization` (optional): Filter by specialization
+
+**Example:**
+```
+GET /api/doctor/filter?specialization=Cardiology
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Dr. John Smith",
+    "email": "smith@example.com",
+    "specialization": "Cardiology",
+    "experience": 10,
+    "rating": 4.5,
+    "consultationFee": 100.00
+  }
+]
+```
+
+## 📅 Availability Endpoints
+
+### Set Doctor Availability
+**POST** `/api/availability/{doctorId}`
+
+Set availability slots for a doctor. Requires authentication and doctor must be updating their own availability.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Request Body:**
+```json
+[
+  {
+    "date": "2024-01-15",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00",
+    "isAvailable": true
+  }
+]
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "doctorId": 1,
+    "date": "2024-01-15",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00",
+    "isAvailable": true
+  }
+]
+```
+
+### Get Doctor Availability
+**GET** `/api/availability/{doctorId}`
+
+Get availability slots for a doctor.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "doctorId": 1,
+    "date": "2024-01-15",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00",
+    "isAvailable": true
+  }
+]
+```
+
+### Delete Availability Slot
+**DELETE** `/api/availability/{doctorId}/{slotId}`
+
+Delete a specific availability slot. Requires authentication and doctor must be deleting their own slot.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response (204 No Content):**
+```
+(Empty response body)
 ```
 
 ---
 
 ## 👤 Patient Endpoints
 
-### Get Patient by ID
-**GET** `/patients/{id}`
+### Get Patient Profile
+**GET** `/api/patient/profile`
 
-Get detailed information about a specific patient.
+Get the authenticated patient's profile. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
 
 **Response (200 OK):**
 ```json
@@ -402,9 +544,14 @@ Get detailed information about a specific patient.
 ```
 
 ### Update Patient Profile
-**PUT** `/patients/{id}`
+**PUT** `/api/patient/profile`
 
-Update patient profile information.
+Update the authenticated patient's profile. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
 
 **Request Body:**
 ```json
@@ -428,8 +575,7 @@ Update patient profile information.
   "dateOfBirth": "1990-01-01",
   "gender": "MALE",
   "address": "123 Main St, City, State",
-  "medicalHistory": "Updated medical history",
-  "message": "Profile updated successfully"
+  "medicalHistory": "Updated medical history"
 }
 ```
 
@@ -438,7 +584,7 @@ Update patient profile information.
 ## 💳 Payment Endpoints
 
 ### Initiate Payment
-**POST** `/payments/initiate`
+**POST** `/api/payments/initiate`
 
 Create a new payment order for an appointment.
 
@@ -462,7 +608,7 @@ Create a new payment order for an appointment.
 ```
 
 ### Payment Webhook
-**POST** `/payments/webhook/cashfree`
+**POST** `/api/payments/webhook/cashfree`
 
 Handle payment status updates from Cashfree.
 
@@ -486,11 +632,11 @@ x-webhook-signature: <signature> (optional, configurable)
 
 **Response (200 OK):**
 ```
-Webhook processed successfully
+(Empty response body)
 ```
 
 ### Get Payment Status
-**GET** `/payments/status/{orderId}`
+**GET** `/api/payments/status/{orderId}`
 
 Get the latest known status for a payment order.
 
@@ -500,7 +646,7 @@ Your payment status is <STATUS>
 ```
 
 ### Debug Orders
-**GET** `/payments/debug/orders`
+**GET** `/api/payments/debug/orders`
 
 Get all payment orders (for debugging purposes).
 
@@ -518,8 +664,8 @@ Get all payment orders (for debugging purposes).
 ]
 ```
 
-### Paginated Payments for a Patient (with filtering)
-**GET** `/payments/payment-details/{id}`
+### Get Paginated Payments for Patient
+**GET** `/api/payments/payment-details/{id}`
 
 Retrieve paginated payments for a specific patient with optional filters. Defaults to page size 10.
 
@@ -535,20 +681,36 @@ Retrieve paginated payments for a specific patient with optional filters. Defaul
 - `maxAmount` (optional): Maximum order amount
 
 **Examples:**
-- Basic: `GET /payments/payment-details/123`
-- Paged: `GET /payments/payment-details/123?page=1&size=5`
-- Filtered: `GET /payments/payment-details/123?status=PAID&paymentMode=UPI`
+- Basic: `GET /api/payments/payment-details/123`
+- Paged: `GET /api/payments/payment-details/123?page=1&size=5`
+- Filtered: `GET /api/payments/payment-details/123?status=PAID&paymentMode=UPI`
 
 **Response (200 OK):**
 ```json
 {
-  "content": [ /* Payment objects */ ],
-  "totalElements": 45,
-  "totalPages": 5,
-  "size": 10,
-  "number": 0,
-  "first": true,
-  "last": false
+  "_embedded": {
+    "paymentEntityList": [
+      {
+        "id": 1,
+        "orderId": "order_123456789",
+        "status": "PAID",
+        "referenceId": "ref_123456789",
+        "paymentMode": "UPI",
+        "orderAmount": 1500.00,
+        "appointmentId": 1
+      }
+    ]
+  },
+  "_links": {
+    "self": { "href": "/api/payments/payment-details/123?page=0&size=10" },
+    "next": { "href": "/api/payments/payment-details/123?page=1&size=10" }
+  },
+  "page": {
+    "size": 10,
+    "totalElements": 45,
+    "totalPages": 5,
+    "number": 0
+  }
 }
 ```
 
@@ -557,17 +719,25 @@ Retrieve paginated payments for a specific patient with optional filters. Defaul
 ## 📹 Video Call Endpoints
 
 ### Create Video Session
-**POST** `/video/create-session`
+**POST** `/api/video-call/session/{appointmentId}`
 
 Create a new video call session for an appointment.
 
-**Request Body:**
+**Response (200 OK):**
 ```json
 {
-  "appointmentId": 1,
-  "participantName": "Dr. Smith"
+  "sessionId": "session_123456789",
+  "accessToken": "twilio_access_token_here",
+  "roomName": "appointment_1_room",
+  "status": "CREATED",
+  "expiresAt": "2024-01-10T11:00:00Z"
 }
 ```
+
+### Get Video Session
+**GET** `/api/video-call/session/{appointmentId}`
+
+Get an existing video call session for an appointment.
 
 **Response (200 OK):**
 ```json
@@ -575,31 +745,59 @@ Create a new video call session for an appointment.
   "sessionId": "session_123456789",
   "accessToken": "twilio_access_token_here",
   "roomName": "appointment_1_room",
+  "status": "ACTIVE",
   "expiresAt": "2024-01-10T11:00:00Z"
 }
 ```
 
-### Join Video Session
-**POST** `/video/join-session`
+### Get Access Token
+**GET** `/api/video-call/token/{appointmentId}`
 
-Join an existing video call session.
+Generate an access token for joining a video call.
+
+**Query Parameters:**
+- `userType` (required): User type (DOCTOR or PATIENT)
+- `userId` (required): User ID
+
+**Example:**
+```
+GET /api/video-call/token/1?userType=DOCTOR&userId=2
+```
+
+**Response (200 OK):**
+```
+"twilio_access_token_string_here"
+```
+
+### End Video Session
+**POST** `/api/video-call/end/{appointmentId}`
+
+End an existing video call session.
+
+**Response (200 OK):**
+```
+(Empty response body)
+```
+
+### Twilio Webhook
+**POST** `/api/video-call/webhook`
+
+Handle incoming Twilio webhook events.
 
 **Request Body:**
 ```json
 {
-  "sessionId": "session_123456789",
-  "participantName": "John Doe"
+  "eventType": "participant-connected",
+  "eventData": {
+    "sessionId": "session_123456789",
+    "participantName": "Dr. Smith"
+  }
 }
 ```
 
 **Response (200 OK):**
-```json
-{
-  "sessionId": "session_123456789",
-  "accessToken": "twilio_access_token_here",
-  "roomName": "appointment_1_room",
-  "expiresAt": "2024-01-10T11:00:00Z"
-}
+```
+(Empty response body)
 ```
 
 ---

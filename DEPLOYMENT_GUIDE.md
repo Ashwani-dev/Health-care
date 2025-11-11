@@ -395,49 +395,170 @@ WantedBy=multi-user.target
 
 ## ⚙️ Environment Configuration
 
-### Development Environment
+### Configuration Files Structure
+
+The application uses Spring Boot profiles to manage different configurations:
+
+```
+src/main/resources/
+├── application.properties          # Base configuration (shared)
+├── application-dev.properties      # Development profile
+├── application-docker.properties   # Docker profile
+└── application-prod.properties    # Production profile
+```
+
+**How Profiles Work**:
+- Spring Boot loads `application.properties` first (base)
+- Then loads `application-{profile}.properties` (profile-specific, overrides base)
+- Activate profile: `SPRING_PROFILES_ACTIVE=dev` or `--spring.profiles.active=dev`
+
+### Environment Variables Setup
+
+#### Step 1: Create Environment File
+
+```bash
+cp env.example .env
+```
+
+#### Step 2: Configure Environment Variables
+
+Edit `.env` with your actual values. **⚠️ IMPORTANT**: Never commit `.env` to version control.
+
+The application uses `spring-dotenv` to automatically load variables from `.env` file. For production, use:
+- System environment variables
+- Secrets management services (AWS Secrets Manager, HashiCorp Vault, etc.)
+- Container orchestration secrets (Kubernetes Secrets, Docker Secrets)
+
+### Profile-Based Configuration
+
+#### Development Profile (`dev`)
+
+**Use Case**: Local development on your machine
+
+**Activation**:
+```bash
+export SPRING_PROFILES_ACTIVE=dev
+# or
+java -jar app.jar --spring.profiles.active=dev
+```
+
+**Key Features**:
+- SSL disabled for local database
+- Debug logging enabled
+- SQL queries logged
+- More permissive settings
+- Cashfree SANDBOX mode
+
+**Configuration File**: `application-dev.properties`
+
+#### Docker Profile (`docker`)
+
+**Use Case**: Running in Docker containers
+
+**Activation**:
+```bash
+# In docker-compose.yml
+SPRING_PROFILES_ACTIVE: docker
+```
+
+**Key Features**:
+- SSL enabled for cloud databases
+- Optimized connection pools
+- Container-friendly logging paths
+- Health checks configured
+
+**Configuration File**: `application-docker.properties`
+
+#### Production Profile (`prod`)
+
+**Use Case**: Production deployment
+
+**Activation**:
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+```
+
+**Key Features**:
+- SSL required
+- Schema validation only (no auto-updates)
+- Production logging levels
+- Cashfree PRODUCTION mode
+- Webhook signature validation enabled
+- Security-hardened settings
+
+**Configuration File**: `application-prod.properties`
+
+### Environment Variables Reference
+
+#### Required Variables
+
+| Variable | Description | Example | Required For |
+|----------|-------------|---------|--------------|
+| `DATABASE_URL` | PostgreSQL connection URL | `jdbc:postgresql://host:5432/db` | All |
+| `DB_USERNAME` | Database username | `healthcare_user` | All |
+| `DB_PASSWORD` | Database password | `secure_password` | All |
+| `JWT_SECRET` | JWT signing secret (min 256 bits) | `base64-encoded-secret` | All |
+| `RABBITMQ_URL` | RabbitMQ connection URL | `amqp://host:5672` | All |
+| `RABBITMQ_USERNAME` | RabbitMQ username | `rabbitmq_user` | All |
+| `RABBITMQ_PASSWORD` | RabbitMQ password | `rabbitmq_password` | All |
+| `EMAIL_ID` | SMTP email address | `noreply@example.com` | All |
+| `EMAIL_PASSWORD` | SMTP password/app password | `app_password` | All |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID | `ACxxxxxxxxxxxxx` | All |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token | `token` | All |
+| `TWILIO_API_KEY` | Twilio API key | `key` | All |
+| `TWILIO_API_SECRET` | Twilio API secret | `secret` | All |
+| `APP_ID` | Cashfree App ID | `app_id` | All |
+| `SECRET_KEY` | Cashfree Secret Key | `secret_key` | All |
+| `FRONTEND_BASE_URL` | Frontend application URL | `https://app.example.com` | All |
+| `BACKEND_BASE_URL` | Backend API URL | `https://api.example.com` | All |
+
+#### Optional Variables
+
+| Variable | Description | Default | Usage |
+|----------|-------------|---------|-------|
+| `SPRING_PROFILE` | Active Spring profile | `dev` | Profile selection |
+| `APP_PORT` | Application port | `8080` | Docker |
+| `RABBITMQ_AMQP_PORT` | RabbitMQ AMQP port | `5672` | Docker |
+| `RABBITMQ_MGMT_PORT` | RabbitMQ Management port | `15672` | Docker |
+
+### Example Environment Files
+
+#### Development Environment
 ```env
-# .env.dev
-NODE_ENV=development
-DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_dev
-DB_USERNAME=dev_user
+# .env (for local development)
+SPRING_PROFILE=dev
+DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_db
+DB_USERNAME=healthcare_user
 DB_PASSWORD=dev_password
-JWT_SECRET=dev_jwt_secret
+JWT_SECRET=dev_jwt_secret_key
+RABBITMQ_URL=amqp://localhost:5672
+RABBITMQ_USERNAME=rabbitmq_user
+RABBITMQ_PASSWORD=rabbitmq_password
 EMAIL_ID=dev@example.com
 EMAIL_PASSWORD=dev_password
 APP_ID=test_app_id
 SECRET_KEY=test_secret_key
-LOGGING_LEVEL=DEBUG
+FRONTEND_BASE_URL=http://localhost:5173
+BACKEND_BASE_URL=http://localhost:8080
 ```
 
-### Staging Environment
+#### Production Environment
 ```env
-# .env.staging
-NODE_ENV=staging
-DATABASE_URL=jdbc:postgresql://staging-db:5432/healthcare_staging
-DB_USERNAME=staging_user
-DB_PASSWORD=staging_password
-JWT_SECRET=staging_jwt_secret
-EMAIL_ID=staging@example.com
-EMAIL_PASSWORD=staging_password
-APP_ID=staging_app_id
-SECRET_KEY=staging_secret_key
-LOGGING_LEVEL=INFO
-```
-
-### Production Environment
-```env
-# .env.prod
-NODE_ENV=production
+# Production (use secrets management service)
+SPRING_PROFILE=prod
 DATABASE_URL=jdbc:postgresql://prod-db:5432/healthcare_prod
 DB_USERNAME=prod_user
 DB_PASSWORD=prod_secure_password
-JWT_SECRET=prod_jwt_secret
+JWT_SECRET=prod_jwt_secret_256_bits_minimum
+RABBITMQ_URL=amqp://prod-rabbitmq:5672
+RABBITMQ_USERNAME=prod_rabbitmq_user
+RABBITMQ_PASSWORD=prod_rabbitmq_password
 EMAIL_ID=prod@example.com
 EMAIL_PASSWORD=prod_password
 APP_ID=prod_app_id
 SECRET_KEY=prod_secret_key
-LOGGING_LEVEL=WARN
+FRONTEND_BASE_URL=https://app.example.com
+BACKEND_BASE_URL=https://api.example.com
 ```
 
 ---
