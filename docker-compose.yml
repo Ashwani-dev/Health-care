@@ -1,0 +1,79 @@
+services:
+  # RabbitMQ Message Broker (if you still need it locally)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ${RABBITMQ_CONTAINER_NAME:-healthcare-rabbitmq}
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-rabbitmq_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq_password}
+    ports:
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672"   # AMQP port
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672" # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - healthcare-network
+
+  # Spring Boot Application
+  healthcare-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${APP_CONTAINER_NAME:-healthcare-app}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-docker}
+
+      # Aiven Cloud PostgreSQL Configuration
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://your-aiven-host:5432/your-database}
+      DB_USERNAME: ${DB_USERNAME:-your-aiven-username}
+      DB_PASSWORD: ${DB_PASSWORD:-your-aiven-password}
+
+      # RabbitMQ Configuration
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-rabbitmq_user}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-rabbitmq_password}
+
+      # Twilio Configuration
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_API_KEY: ${TWILIO_API_KEY:-${TWILIO_ACCOUNT_SID}}
+      TWILIO_API_SECRET: ${TWILIO_API_SECRET:-${TWILIO_AUTH_TOKEN}}
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+
+      # Email Configuration
+      EMAIL_ID: ${EMAIL_ID}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+      # Cashfree Configuration
+      APP_ID: ${APP_ID}
+      SECRET_KEY: ${SECRET_KEY}
+
+      # Frontend/Backend URLs
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
+      BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://localhost:8080}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - healthcare-network
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+    driver: local
+
+networks:
+  healthcare-network:
+    driver: bridge

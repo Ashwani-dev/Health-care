@@ -6,6 +6,7 @@ import com.ashwani.HealthCare.Entity.AppointmentHold;
 import com.ashwani.HealthCare.Repository.AppointmentHoldRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +20,26 @@ public class PaymentEventListener {
     private final AppointmentService appointmentService;
     private final AppointmentHoldRepository appointmentHoldRepository;
 
-    @RabbitListener(queues = "payment.completed")
+    /**
+     * Dynamically declare and listen to the payment.completed queue.
+     * 
+     * This approach handles both scenarios:
+     * 1. Queue doesn't exist: Creates it with durable=true
+     * 2. Queue exists with different properties: RabbitAdmin's ignoreDeclarationExceptions
+     *    will ignore the declaration error and bind to the existing queue
+     * 
+     * This is the best approach as it works in all environments:
+     * - Local development (queue may not exist)
+     * - Production/Cloud (queue may already exist with different properties)
+     */
+    @RabbitListener(
+        queuesToDeclare = @Queue(
+            name = "payment.completed",
+            durable = "true"
+        ),
+        autoStartup = "true",
+        containerFactory = "rabbitListenerContainerFactory"
+    )
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         try {
             // 1. Get appointment details from hold service

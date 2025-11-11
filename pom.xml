@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	
+	<!-- Spring Boot Parent POM - provides dependency management and plugin configurations -->
+	<!-- This parent POM manages versions of Spring Boot dependencies automatically -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+	
+	<!-- Project Metadata -->
 	<groupId>com.ashwani</groupId>
 	<artifactId>HealthCare</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -26,126 +31,118 @@
 		<tag/>
 		<url/>
 	</scm>
+	
+	<!-- Project Properties -->
+	<!-- Java version used for compilation and runtime -->
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+	
+	<!-- ============================================ -->
+	<!-- Dependencies Section -->
+	<!-- ============================================ -->
 	<dependencies>
+		<!-- ============================================ -->
+		<!-- Core Spring Boot Dependencies -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Boot Web Starter - provides REST API support, embedded Tomcat, etc. -->
+		<!-- Includes: Spring MVC, embedded Tomcat, Jackson for JSON, validation -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		
+		<!-- Lombok - reduces boilerplate code (getters, setters, constructors, etc.) -->
+		<!-- Annotations: @Data, @Getter, @Setter, @Builder, @RequiredArgsConstructor, etc. -->
+		<!-- Optional: true means it won't be transitively included in dependent projects -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		
+		<!-- Spring Boot Test Starter - for unit and integration testing -->
+		<!-- Includes: JUnit, Mockito, AssertJ, Spring Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Database Dependencies -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Data JPA - provides JPA/Hibernate support for database operations -->
+		<!-- Enables: @Entity, @Repository, JPA repositories, transaction management -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+		
+		<!-- PostgreSQL JDBC Driver - for connecting to PostgreSQL database -->
+		<!-- Used for production database connections -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>me.paulschwarz</groupId>
-			<artifactId>spring-dotenv</artifactId>
-			<version>4.0.0</version>
-		</dependency>
+		
+		<!-- H2 Database - in-memory database for testing -->
+		<!-- Used only during testing, not in production -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Configuration & Environment -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Dotenv - loads environment variables from .env file -->
+		<!-- Allows loading configuration from .env files for local development -->
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Security Dependencies -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Security Crypto - for password encryption/hashing -->
+		<!-- Provides: BCryptPasswordEncoder for hashing passwords -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
 		</dependency>
-
+		
+		<!-- JWT (JSON Web Token) Dependencies - for authentication tokens -->
+		<!-- JWT API - core JWT functionality -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
 			<version>0.11.5</version>
 		</dependency>
+		<!-- JWT Implementation - runtime implementation -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- JWT Jackson - JSON processing for JWT -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
-
-		<!-- Jackson for JSON processing -->
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-		</dependency>
-
-		<!-- Twilio SDK -->
-		<dependency>
-			<groupId>com.twilio.sdk</groupId>
-			<artifactId>twilio</artifactId>
-			<version>9.14.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-		</dependency>
-
-<!--	Recently add for Mapping DTO class to existing class-->
-		<dependency>
-			<groupId>org.modelmapper</groupId>
-			<artifactId>modelmapper</artifactId>
-			<version>3.2.0</version>
-		</dependency>
-
-<!--		For Pagination-->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-hateoas</artifactId>
-		</dependency>
-
-<!--		Payment Service AND Appointment Service POM-->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-amqp</artifactId>
-		</dependency>
-
-<!--		For payment gateway-->
-		<dependency>
-			<groupId>com.cashfree.pg.java</groupId>
-			<artifactId>cashfree_pg</artifactId>
-			<version>5.0.1</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>4.10.0</version>
-		</dependency>
-
-		<!-- Spring Boot Starter Mail -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
-		</dependency>
-
-		<!-- Thymeleaf for email templates -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
-		</dependency>
+		
+		<!-- Spring Security Config & Web - for authentication and authorization -->
+		<!-- Provides: SecurityFilterChain, JWT filter integration, role-based access control -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
@@ -156,14 +153,132 @@
 			<artifactId>spring-security-web</artifactId>
 			<version>6.4.4</version>
 		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- JSON Processing -->
+		<!-- ============================================ -->
+		
+		<!-- Jackson Databind - JSON serialization/deserialization -->
+		<!-- Used for: Converting Java objects to/from JSON in REST APIs -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Third-Party Service Integrations -->
+		<!-- ============================================ -->
+		
+		<!-- Twilio SDK - for video calling and SMS functionality -->
+		<!-- Used for: Video consultations, SMS notifications -->
+		<dependency>
+			<groupId>com.twilio.sdk</groupId>
+			<artifactId>twilio</artifactId>
+			<version>9.14.1</version>
+		</dependency>
+		
+		<!-- Cashfree Payment Gateway SDK - for payment processing -->
+		<!-- Used for: Processing patient payments for appointments -->
+		<dependency>
+			<groupId>com.cashfree.pg.java</groupId>
+			<artifactId>cashfree_pg</artifactId>
+			<version>5.0.1</version>
+			<scope>compile</scope>
+		</dependency>
+		<!-- OkHttp - HTTP client used by Cashfree SDK -->
+		<!-- Required dependency for Cashfree SDK to make HTTP requests -->
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.10.0</version>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Validation & Data Mapping -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Boot Validation - for request validation (@Valid, @NotNull, etc.) -->
+		<!-- Enables: Bean validation annotations (@NotNull, @Email, @Size, etc.) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		
+		<!-- ModelMapper - for mapping DTOs to Entities and vice versa -->
+		<!-- Used for: Converting between DTO (Data Transfer Objects) and Entity classes -->
+		<dependency>
+			<groupId>org.modelmapper</groupId>
+			<artifactId>modelmapper</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- API & Pagination -->
+		<!-- ============================================ -->
+		
+		<!-- Spring HATEOAS - for RESTful API pagination and hypermedia links -->
+		<!-- Used for: Adding pagination links and HATEOAS support to REST responses -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-hateoas</artifactId>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Messaging -->
+		<!-- ============================================ -->
+		
+		<!-- Spring AMQP - for RabbitMQ message broker integration -->
+		<!-- Used for: Asynchronous payment event processing -->
+		<!-- Enables: @RabbitListener, RabbitTemplate, queue management -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Email Functionality -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Boot Mail - for sending emails (appointment confirmations, etc.) -->
+		<!-- Used for: Sending email notifications to patients and doctors -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		
+		<!-- Thymeleaf - template engine for email HTML templates -->
+		<!-- Used for: Creating HTML email templates (appointment confirmations, etc.) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		
+		<!-- ============================================ -->
+		<!-- Monitoring & Health Checks -->
+		<!-- ============================================ -->
+		
+		<!-- Spring Boot Actuator - provides health checks, metrics, and monitoring endpoints -->
+		<!-- Endpoints: /actuator/health, /actuator/info, etc. -->
+		<!-- Used for: Application health monitoring, production-ready features -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 	</dependencies>
 
+	<!-- ============================================ -->
+	<!-- Build Configuration -->
+	<!-- ============================================ -->
 	<build>
 		<plugins>
+			<!-- Maven Compiler Plugin - configures Java compilation -->
+			<!-- Configures: Java version, annotation processors (Lombok) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
+					<!-- Configure Lombok annotation processor for compile-time code generation -->
+					<!-- This allows Lombok to generate getters, setters, etc. during compilation -->
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
@@ -172,10 +287,15 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			
+			<!-- Spring Boot Maven Plugin - packages application as executable JAR -->
+			<!-- Enables: mvn spring-boot:run, creates fat JAR with all dependencies -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- Exclude Lombok from final JAR (it's only needed at compile time) -->
+					<!-- Lombok is a compile-time dependency, not needed at runtime -->
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
