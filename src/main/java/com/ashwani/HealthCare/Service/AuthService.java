@@ -64,6 +64,11 @@ public class AuthService {
         if (doctorRepository.findByUsername(doctor.getUsername()).isPresent()) {
             throw new RuntimeException("Username does already exist");
         }
+
+        if (doctorRepository.findByLicenseNumber(doctor.getLicense_number()).isPresent()) {
+            throw new RuntimeException("License number already exists");
+        }
+
         doctor.setPassword(passwordEncoder.encode(doctor.getPassword()));
 
         DoctorEntity savedDoctor = doctorRepository.save(doctor);

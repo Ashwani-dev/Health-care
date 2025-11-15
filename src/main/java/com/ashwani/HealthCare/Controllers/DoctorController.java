@@ -3,6 +3,7 @@ package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
@@ -85,5 +86,16 @@ public class DoctorController {
             @RequestParam(required = false) String specialization
     ) {
         return doctorService.searchDoctors(null, specialization);
+    }
+
+    @GetMapping("/{id}")
+    /**
+     * Get doctor profile by ID (public read-only information)
+     * @param id Doctor ID
+     * @return Doctor profile with public information
+     */
+    public ResponseEntity<DoctorProfileById> getDoctorProfileById(@PathVariable Long id) {
+        DoctorProfileById profile = doctorService.getDoctorProfileById(id);
+        return ResponseEntity.ok(profile);
     }
 }

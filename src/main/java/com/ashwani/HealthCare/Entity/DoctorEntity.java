@@ -1,5 +1,6 @@
 package com.ashwani.HealthCare.Entity;
 
+import com.ashwani.HealthCare.Enums.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -46,4 +47,15 @@ public class DoctorEntity {
     @Column(nullable = false)
     @NotBlank(message = "Area of specialization is required")
     private String specialization;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @NotNull(message = "Gender is required")
+    private Gender gender;
+
+    @Column(name = "license_number", nullable = false, unique = true, length = 50)
+    @NotBlank(message = "License number is required")
+    @Size(min = 5, max = 50, message = "License number must be between 5 and 50 characters")
+    @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "License number must be alphanumeric with optional hyphens")
+    private String license_number;
 }

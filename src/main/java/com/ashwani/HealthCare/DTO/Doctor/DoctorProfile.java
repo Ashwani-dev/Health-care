@@ -1,8 +1,11 @@
 package com.ashwani.HealthCare.DTO.Doctor;
 
+import com.ashwani.HealthCare.Enums.Gender;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +18,6 @@ public class DoctorProfile {
     private String contact_number;
     private int medical_experience;
     private String specialization;
+    private Gender gender;
+    private String license_number;
 }

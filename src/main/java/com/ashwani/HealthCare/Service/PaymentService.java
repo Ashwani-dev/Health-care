@@ -194,6 +194,7 @@ public class PaymentService {
      * @param pageable Pagination and sorting information
      * @return Page of PaymentEntity objects
      */
+    @Transactional(readOnly = true)
     public Page<PaymentEntity> getPaginatedPayments(
             String status,
             String paymentMode,

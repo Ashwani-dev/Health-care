@@ -2,6 +2,7 @@ package com.ashwani.HealthCare.Service;
 
 import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,12 +64,49 @@ public class DoctorService {
                         HttpStatus.NOT_FOUND,
                         "Doctor not found with ID: " + doctorId
                 ));
+        // Handle license number validation only if it's being provided in the update
+        if (updateRequest.license_number() != null && !updateRequest.license_number().trim().isEmpty()) {
+            // Check if license number is being changed and if it's unique
+            if (doctor.getLicense_number() == null ||
+                    !doctor.getLicense_number().equals(updateRequest.license_number())) {
 
-        // Update only allowed fields
+                doctorRepository.findByLicenseNumber(updateRequest.license_number())
+                        .ifPresent(existingDoctor -> {
+                            if (!existingDoctor.getId().equals(doctorId)) {
+                                throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "License number already exists"
+                                );
+                            }
+                        });
+            }
+        }
+
+        // Update allowed fields
         doctor.setFull_name(updateRequest.full_name());
         doctor.setMedical_experience(updateRequest.medical_experience());
+        doctor.setGender(updateRequest.gender());
+        doctor.setLicense_number(updateRequest.license_number());
 
         DoctorEntity updatedDoctor = doctorRepository.save(doctor);
         return modelMapper.map(updatedDoctor, DoctorProfile.class);
+    }
+
+    @Transactional(readOnly = true)
+    public DoctorProfileById getDoctorProfileById(Long doctorId) {
+        DoctorEntity doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Doctor not found with ID: " + doctorId
+                ));
+
+        return new DoctorProfileById(
+                doctor.getEmail(),
+                doctor.getFull_name(),
+                doctor.getContact_number(),
+                doctor.getSpecialization(),
+                doctor.getMedical_experience(),
+                doctor.getGender()
+        );
     }
 }

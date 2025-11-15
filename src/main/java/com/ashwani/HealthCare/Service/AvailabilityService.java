@@ -9,6 +9,7 @@ import com.ashwani.HealthCare.Repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class AvailabilityService {
         return modelMapper.map(availability, AvailabilityResponseDto.class);
     }
 
+    @Transactional(readOnly = true)
     public List<AvailabilityResponseDto> getDoctorAvailability(Long doctorId) {
         return availabilityRepository.findByDoctorId(doctorId).stream()
                 .map(this::convertToResponse)

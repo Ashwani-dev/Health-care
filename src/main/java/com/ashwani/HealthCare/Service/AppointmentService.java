@@ -192,6 +192,7 @@ public class AppointmentService {
         return appointmentPage.map(this::convertToResponse);
     }
 
+    @Transactional(readOnly = true)
     public Page<PatientAppointmentResponse> getDoctorAppointments(
             Long doctorId,
             LocalDate appointmentDate,
@@ -218,6 +219,7 @@ public class AppointmentService {
         return appointmentPage.map(this::convertToResponse);
     }
 
+    @Transactional(readOnly = true)
     public List<TimeSlot> getAvailableSlots(Long doctorId, LocalDate date) {
         // 1. Early validation
         DoctorEntity doctor = doctorRepository.findById(doctorId)
