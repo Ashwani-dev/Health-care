@@ -58,38 +58,63 @@ public class PaymentService {
     private final RabbitTemplate rabbitTemplate;
 
     public PaymentResponse initiatePayment(PaymentRequest paymentRequest) throws ApiException {
-        // Construct the customer details
-        CustomerDetails customerDetails = new CustomerDetails();
-        customerDetails.setCustomerId(paymentRequest.getCustomerId());
-        customerDetails.setCustomerName(paymentRequest.getCustomerName());
-        customerDetails.setCustomerPhone(paymentRequest.getCustomerPhone());
-        customerDetails.setCustomerEmail(paymentRequest.getCustomerEmail());
+        try {
+            // Construct the customer details
+            CustomerDetails customerDetails = new CustomerDetails();
+            customerDetails.setCustomerId(paymentRequest.getCustomerId());
+            customerDetails.setCustomerName(paymentRequest.getCustomerName());
+            customerDetails.setCustomerPhone(paymentRequest.getCustomerPhone());
+            customerDetails.setCustomerEmail(paymentRequest.getCustomerEmail());
 
-        // Set up the order request
-        CreateOrderRequest request = new CreateOrderRequest();
-        request.setOrderAmount(paymentRequest.getAmount());
-        request.setOrderCurrency("INR");
-        request.setCustomerDetails(customerDetails);
+            // Set up the order request
+            CreateOrderRequest request = new CreateOrderRequest();
+            request.setOrderAmount(paymentRequest.getAmount());
+            request.setOrderCurrency("INR");
+            request.setCustomerDetails(customerDetails);
 
-        OrderMeta orderMeta = new OrderMeta();
-        orderMeta.setReturnUrl(frontendUrl + "/payment-status?order_id={order_id}");
-        request.setOrderMeta(orderMeta);
+            OrderMeta orderMeta = new OrderMeta();
+            orderMeta.setReturnUrl(frontendUrl + "/payment-status?order_id={order_id}");
+            request.setOrderMeta(orderMeta);
 
-        // Create order via SDK
-        ApiResponse<OrderEntity> response = cashfree.PGCreateOrder(request, null, null, null);
-        String orderId = response.getData().getOrderId();
-        String paymentSessionId = response.getData().getPaymentSessionId();
+            log.info("Attempting to create Cashfree order for customer: {}, amount: {}", 
+                    paymentRequest.getCustomerId(), paymentRequest.getAmount());
 
-        PaymentEntity payment = new PaymentEntity();
-        payment.setOrderId(response.getData().getOrderId());
-        payment.setStatus("PENDING");
-        payment.setPatientId(Long.parseLong(paymentRequest.getCustomerId()));
-        payment.setAppointmentHoldReference(paymentRequest.getAppointmentHoldReference());
+            // Create order via SDK
+            ApiResponse<OrderEntity> response = cashfree.PGCreateOrder(request, null, null, null);
+            String orderId = response.getData().getOrderId();
+            String paymentSessionId = response.getData().getPaymentSessionId();
+            
+            log.info("Successfully created Cashfree order: {}", orderId);
 
-        paymentRepository.save(payment);
+            PaymentEntity payment = new PaymentEntity();
+            payment.setOrderId(response.getData().getOrderId());
+            payment.setStatus("PENDING");
+            payment.setPatientId(Long.parseLong(paymentRequest.getCustomerId()));
+            payment.setAppointmentHoldReference(paymentRequest.getAppointmentHoldReference());
 
-        // Return order and session info to the controller/caller
-        return new PaymentResponse(orderId, paymentSessionId);
+            paymentRepository.save(payment);
+
+            // Return order and session info to the controller/caller
+            return new PaymentResponse(orderId, paymentSessionId);
+        } catch (ApiException e) {
+            log.error("Cashfree API error while creating order. HTTP Code: {}, Message: {}, Response: {}", 
+                    e.getCode(), e.getMessage(), e.getResponseBody(), e);
+            
+            // Provide more helpful error message
+            if (e.getCode() == 401) {
+                throw new ApiException(
+                    "Cashfree authentication failed. Please verify APP_ID and SECRET_KEY are correctly set in environment variables. " +
+                    "Ensure you're using the correct credentials for the environment (SANDBOX vs PRODUCTION).",
+                    e.getCode(),
+                    e.getResponseHeaders(),
+                    e.getResponseBody()
+                );
+            }
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error while initiating payment", e);
+            throw e;
+        }
     }
 
     /**
