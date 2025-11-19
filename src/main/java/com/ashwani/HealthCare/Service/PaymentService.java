@@ -32,6 +32,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,6 +42,9 @@ import com.ashwani.HealthCare.specifications.PaymentSpecifications;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
+    @Value("${cashfree.appId}")
+    private String appId;
+    
     @Value("${cashfree.secretKey}")
     private String secretKey;
     
@@ -52,6 +56,9 @@ public class PaymentService {
 
     @Value("${app.backend-url}")
     private String backendUrl;
+
+    @Value("${cashfree.env:SANDBOX}")
+    private String cashfreeEnvironment;
 
     private final Cashfree cashfree;
     private final PaymentRepository paymentRepository;
@@ -317,6 +324,23 @@ public class PaymentService {
         if (status == null) return false;
         return status.equalsIgnoreCase("PAID") ||
                 status.equalsIgnoreCase("SUCCESS");
+    }
+
+    /**
+     * Get configuration status for debugging (without exposing secrets)
+     */
+    public Map<String, Object> getConfigStatus() {
+        Map<String, Object> status = new java.util.HashMap<>();
+        status.put("cashfreeEnvironment", cashfreeEnvironment);
+        status.put("appIdConfigured", appId != null && !appId.trim().isEmpty());
+        status.put("secretKeyConfigured", secretKey != null && !secretKey.trim().isEmpty());
+        status.put("appIdLength", appId != null ? appId.length() : 0);
+        status.put("secretKeyLength", secretKey != null ? secretKey.length() : 0);
+        status.put("frontendUrl", frontendUrl);
+        status.put("backendUrl", backendUrl);
+        status.put("appIdStartsWith", appId != null && appId.length() > 3 ? appId.substring(0, 3) + "..." : "N/A");
+        status.put("secretKeyStartsWith", secretKey != null && secretKey.length() > 3 ? secretKey.substring(0, 3) + "..." : "N/A");
+        return status;
     }
 }
 

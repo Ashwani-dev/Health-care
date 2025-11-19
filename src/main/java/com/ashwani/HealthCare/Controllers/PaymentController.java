@@ -86,6 +86,20 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/debug/config")
+    /**
+     * Debug endpoint to check Cashfree configuration (without exposing secrets)
+     * @return Configuration status
+     */
+    public ResponseEntity<?> debugConfig() {
+        try {
+            return ResponseEntity.ok(paymentService.getConfigStatus());
+        } catch (Exception e) {
+            log.error("Error getting config status", e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
     /**
      * Get paginated list of payments with optional filtering
      * @param assembler Page number (0-based, defaults to 0)
