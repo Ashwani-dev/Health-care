@@ -98,9 +98,14 @@ public class PaymentWebhookPayload {
     }
 
     public String getReferenceId() {
-        return getData() != null && getData().getPayment() != null
-                ? getData().getPayment().getCf_payment_id().toString()
-                : null;
+        if (getData() != null && getData().getPayment() != null && getData().getPayment().getCf_payment_id() != null) {
+            return getData().getPayment().getCf_payment_id().toString();
+        }
+        // Fallback to bank_reference if cf_payment_id is not available
+        if (getData() != null && getData().getPayment() != null && getData().getPayment().getBank_reference() != null) {
+            return getData().getPayment().getBank_reference();
+        }
+        return null;
     }
 
     public String getPaymentMode() {
