@@ -5,6 +5,7 @@ import com.ashwani.HealthCare.Entity.PatientEntity;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -12,15 +13,16 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
-    private final VideoCallService videoCallService;
 
 
     private String generatePatientJoinLink(Long appointmentId) {
@@ -46,7 +48,8 @@ public class EmailService {
             String htmlContent = templateEngine.process("email/patient-appointment", context);
             sendEmail(patient.getEmail(), "Appointment Confirmation", htmlContent);
         } catch (MessagingException e) {
-            // Handle error
+            log.error("❌ Failed to send patient email to: {}", patient.getEmail(), e);
+            throw new RuntimeException("Failed to send patient email", e);
         }
     }
 
@@ -66,7 +69,8 @@ public class EmailService {
             String htmlContent = templateEngine.process("email/doctor-notification", context);
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
         } catch (MessagingException e) {
-            // Handle error
+            log.error("❌ Failed to send patient email to: {}", doctor.getEmail(), e);
+            throw new RuntimeException("Failed to send patient email", e);
         }
     }
 
@@ -75,6 +79,11 @@ public class EmailService {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+        try {
+            helper.setFrom("itsmeashwi786@gmail.com", "Thera-Connect");
+        } catch (UnsupportedEncodingException e) {
+            helper.setFrom("itsemashwi786@gmail.com");
+        }
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(htmlContent, true); // true = isHTML
@@ -83,9 +92,17 @@ public class EmailService {
     }
     @Async
     public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, Long appointmentId, LocalTime appointmentTime, LocalDate date, String description){
-        String patientJoinLink = generatePatientJoinLink(appointmentId);
-        String doctorJoinLink = generateDoctorJoinLink(appointmentId);
-        sendPatientEmail(doctor, patient, appointmentTime, date, patientJoinLink);
-        sendDoctorEmail(doctor, patient, appointmentTime, date, description, doctorJoinLink);
+        String doctorEmail = doctor.getEmail();
+        String patientEmail = patient.getEmail();
+        log.info("📧 Sending appointment confirmation to: {} and {}", doctorEmail, patientEmail);
+        try {
+            String patientJoinLink = generatePatientJoinLink(appointmentId);
+            String doctorJoinLink = generateDoctorJoinLink(appointmentId);
+            sendPatientEmail(doctor, patient, appointmentTime, date, patientJoinLink);
+            sendDoctorEmail(doctor, patient, appointmentTime, date, description, doctorJoinLink);
+            log.info("✅ SUCCESS: All emails sent for appointment: {}", appointmentId);
+        } catch (Exception e) {
+            log.error("❌ COMPLETE FAILURE: Email sending failed for appointment: {}", appointmentId, e);
+        }
     }
 }
