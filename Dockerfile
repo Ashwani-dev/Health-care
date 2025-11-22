@@ -1,6 +1,6 @@
 # Multi-stage build for Spring Boot application
 # Stage 1: Build the application
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy pom.xml and download dependencies (cached layer)
@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 2: Run the application
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Install wget for healthcheck (before switching to non-root user)
@@ -41,4 +41,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
-
