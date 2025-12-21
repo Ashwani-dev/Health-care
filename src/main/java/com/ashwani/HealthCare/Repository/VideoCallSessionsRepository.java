@@ -1,15 +1,16 @@
 package com.ashwani.HealthCare.Repository;
 
 import com.ashwani.HealthCare.Entity.VideoCallSessionsEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface VideoCallSessionsRepository extends JpaRepository<VideoCallSessionsEntity, Long> {
 
+    @EntityGraph(attributePaths = {"appointment", "appointment.patient", "appointment.doctor"})
     Optional<VideoCallSessionsEntity> findByAppointmentId(Long appointmentId);
 
     /**

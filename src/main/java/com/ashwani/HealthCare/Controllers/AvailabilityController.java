@@ -4,6 +4,7 @@ import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;
 import com.ashwani.HealthCare.Service.AvailabilityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,16 +62,22 @@ public class AvailabilityController {
      * @return 204 No Content on success
      * @throws AccessDeniedException if a doctor tries to delete another doctor's slot
      */
-    public ResponseEntity<Void> deleteAvailabilitySlot(
+    public ResponseEntity<String> deleteAvailabilitySlot(
             @PathVariable Long doctorId,
             @PathVariable Long slotId,
             Principal principal) throws AccessDeniedException {
 
         if (!principal.getName().equals(doctorId.toString())) {
-            throw new AccessDeniedException("You can only delete your own availability slots");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Error: You can only delete your own availability slots");
         }
 
-        availabilityService.deleteAvailabilitySlot(doctorId, slotId);
-        return ResponseEntity.noContent().build();
+        try {
+            availabilityService.deleteAvailabilitySlot(doctorId, slotId);
+            return ResponseEntity.ok("Success: Availability slot " + slotId + " deleted successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        }
     }
 }

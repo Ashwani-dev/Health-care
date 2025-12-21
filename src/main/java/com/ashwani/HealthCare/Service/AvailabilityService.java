@@ -46,9 +46,17 @@ public class AvailabilityService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteAvailabilitySlot(Long doctorId, Long slotId) {
         DoctorEntity doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        boolean slotExists = availabilityRepository.existsById(slotId);
+
+        if (!slotExists) {
+            throw new RuntimeException("Availability slot not found or does not belong to this doctor");
+        }
+
         availabilityRepository.deleteByDoctorAndId(doctor, slotId);
     }
 }
