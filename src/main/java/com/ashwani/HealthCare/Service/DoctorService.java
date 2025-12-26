@@ -85,7 +85,6 @@ public class DoctorService {
         // Update allowed fields
         doctor.setFull_name(updateRequest.full_name());
         doctor.setMedical_experience(updateRequest.medical_experience());
-        doctor.setGender(updateRequest.gender());
         doctor.setLicense_number(updateRequest.license_number());
 
         DoctorEntity updatedDoctor = doctorRepository.save(doctor);

@@ -1,6 +1,6 @@
 package com.ashwani.HealthCare.Service;
 
-import com.ashwani.HealthCare.DTO.AuthResponse;
+import com.ashwani.HealthCare.DTO.Authentication.AuthResponse;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;

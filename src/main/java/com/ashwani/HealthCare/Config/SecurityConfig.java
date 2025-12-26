@@ -45,8 +45,11 @@ public class SecurityConfig {
                                 "/actuator/info",
                                 "/api/auth/patient/register",
                                 "/api/auth/patient/login",
+                                "/api/auth/patient/forgot-password",
                                 "/api/auth/doctor/register",
                                 "/api/auth/doctor/login",
+                                "/api/auth/doctor/forgot-password",
+                                "/api/auth/reset-password",
                                 "/api/video-call/webhook",
                                 "/api/payments/webhook/**"
                         ).permitAll()

@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.DTO;
+package com.ashwani.HealthCare.DTO.Authentication;
 
 public record AuthResponse (
     boolean success,

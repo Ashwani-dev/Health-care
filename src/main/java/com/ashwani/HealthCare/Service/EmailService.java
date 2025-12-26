@@ -6,6 +6,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -23,6 +24,10 @@ import java.time.LocalTime;
 public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+
+    @SuppressWarnings("unused")
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
 
     private String generatePatientJoinLink(Long appointmentId) {
@@ -43,7 +48,7 @@ public class EmailService {
             context.setVariable("date", date);
             context.setVariable("time", time);
             context.setVariable("joinLink", patientJoinLink);
-            context.setVariable("cancelLink", "https://yourclinic.com/cancel?token=12345");
+            context.setVariable("cancelLink", "https://healthcare-thera-connect.vercel.app/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/patient-appointment", context);
             sendEmail(patient.getEmail(), "Appointment Confirmation", htmlContent);
@@ -64,7 +69,7 @@ public class EmailService {
             context.setVariable("time", time);
             context.setVariable("description", description);
             context.setVariable("joinLink", doctorJoinLink);
-            context.setVariable("cancelLink", "https://yourclinic.com/cancel?token=12345");
+            context.setVariable("cancelLink", "https://healthcare-thera-connect.vercel.app/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/doctor-notification", context);
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
@@ -103,6 +108,32 @@ public class EmailService {
             log.info("✅ SUCCESS: All emails sent for appointment: {}", appointmentId);
         } catch (Exception e) {
             log.error("❌ COMPLETE FAILURE: Email sending failed for appointment: {}", appointmentId, e);
+        }
+    }
+
+    /**
+     * Send password reset email to user
+     * @param email User's email address
+     * @param userName User's full name
+     * @param userType Type of user (PATIENT or DOCTOR)
+     * @param resetToken Password reset token
+     */
+    @Async
+    public void sendPasswordResetEmail(String email, String userName, String userType, String resetToken) {
+        log.info("📧 Sending password reset email to: {}", email);
+        try {
+            Context context = new Context();
+            context.setVariable("userName", userName);
+            context.setVariable("userType", userType);
+            // Use configured frontend URL instead of a hard-coded value
+            context.setVariable("resetLink", frontendUrl + "/reset-password?token=" + resetToken);
+
+            String htmlContent = templateEngine.process("email/password-reset", context);
+            sendEmail(email, "Password Reset Request - HealthCare", htmlContent);
+            log.info("✅ SUCCESS: Password reset email sent to: {}", email);
+        } catch (Exception e) {
+            log.error("❌ FAILURE: Password reset email failed for: {}", email, e);
+            throw new RuntimeException("Failed to send password reset email", e);
         }
     }
 }

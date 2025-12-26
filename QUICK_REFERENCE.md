@@ -72,6 +72,9 @@ RABBITMQ_PASSWORD=rabbitmq_password
 # JWT
 JWT_SECRET=your_jwt_secret_key
 
+# Password Reset
+PASSWORD_RESET_TOKEN_EXPIRY_MINUTES=60
+
 # Email
 EMAIL_ID=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
@@ -104,10 +107,13 @@ SPRING_PROFILE=dev
 
 ### Authentication
 ```
-POST   /api/auth/patient/register      - Register patient
-POST   /api/auth/patient/login         - Login patient
-POST   /api/auth/doctor/register       - Register doctor
-POST   /api/auth/doctor/login          - Login doctor
+POST   /api/auth/patient/register         - Register patient
+POST   /api/auth/patient/login            - Login patient
+POST   /api/auth/patient/forgot-password  - Request patient password reset
+POST   /api/auth/doctor/register          - Register doctor
+POST   /api/auth/doctor/login             - Login doctor
+POST   /api/auth/doctor/forgot-password   - Request doctor password reset
+POST   /api/auth/reset-password           - Reset password with token
 ```
 
 ### Appointments
@@ -159,6 +165,49 @@ POST   /api/video-call/end/{appointmentId}      - End video session
 POST   /api/video-call/webhook                  - Twilio webhook
 ```
 
+## 🔐 Password Reset Workflow
+
+### Request Password Reset
+```bash
+# For Patient
+curl -X POST http://localhost:8080/api/auth/patient/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email": "patient@example.com"}'
+
+# For Doctor
+curl -X POST http://localhost:8080/api/auth/doctor/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email": "doctor@example.com"}'
+```
+
+### Reset Password with Token
+```bash
+curl -X POST http://localhost:8080/api/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "550e8400-e29b-41d4-a716-446655440000",
+    "newPassword": "newPassword123"
+  }'
+```
+
+### Configuration
+- **Token Expiry**: Configurable via `password.reset.token.expiry.minutes` (default: 60 minutes)
+- **Password Requirements**: Minimum 6 characters
+- **Email Template**: `src/main/resources/templates/email/password-reset.html`
+- **Token Format**: UUID (128-bit random)
+- **Security**: One-time use, automatic cleanup of expired tokens
+
+### Database
+```sql
+-- View active reset tokens
+SELECT * FROM password_reset_tokens 
+WHERE used = FALSE AND expiry_date > NOW();
+
+-- Manual cleanup if needed
+DELETE FROM password_reset_tokens 
+WHERE expiry_date < NOW() OR used = TRUE;
+```
+
 ## 🗄️ Database Schema
 
 ### Key Tables
@@ -167,6 +216,7 @@ POST   /api/video-call/webhook                  - Twilio webhook
 users                    - User accounts
 doctor_entities          - Doctor information
 patient_entities         - Patient information
+password_reset_tokens    - Password reset tokens
 
 -- Appointments
 appointment_entities     - Appointment records
@@ -208,6 +258,9 @@ spring.jpa.hibernate.ddl-auto=update
 # Security
 jwt.secret=${JWT_SECRET}
 jwt.expiration.ms=${JWT_EXPIRATION_MS}
+
+# Password Reset
+password.reset.token.expiry.minutes=60
 
 # Email
 spring.mail.host=smtp.gmail.com

@@ -12,9 +12,6 @@ public record DoctorProfileUpdateRequest(
         @Max(value = 50, message = "Experience cannot exceed 50 years")
         Integer medical_experience,
 
-        @NotNull(message = "Gender is required")
-        Gender gender,
-
         @NotBlank(message = "License number is required")
         @Size(min = 5, max = 50, message = "License number must be between 5 and 50 characters")
         @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "License number must be alphanumeric with optional hyphens")

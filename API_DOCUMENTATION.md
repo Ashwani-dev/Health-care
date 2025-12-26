@@ -115,6 +115,77 @@ Authenticate a doctor and receive JWT token.
 }
 ```
 
+### Forgot Password - Patient
+**POST** `/api/auth/patient/forgot-password`
+
+Request a password reset for a patient account. An email will be sent with a reset link containing a token.
+
+**Request Body:**
+```json
+{
+  "email": "patient@example.com"
+}
+```
+
+**Response (200 OK):**
+```
+Password reset link has been sent to your email address
+```
+
+**Error Responses:**
+- `400 Bad Request` - Invalid email format
+- `400 Bad Request` - No account found with this email address
+
+### Forgot Password - Doctor
+**POST** `/api/auth/doctor/forgot-password`
+
+Request a password reset for a doctor account. An email will be sent with a reset link containing a token.
+
+**Request Body:**
+```json
+{
+  "email": "doctor@example.com"
+}
+```
+
+**Response (200 OK):**
+```
+Password reset link has been sent to your email address
+```
+
+**Error Responses:**
+- `400 Bad Request` - Invalid email format
+- `400 Bad Request` - No account found with this email address
+
+### Reset Password
+**POST** `/api/auth/reset-password`
+
+Reset password using the token received via email. Works for both patient and doctor accounts.
+
+**Request Body:**
+```json
+{
+  "token": "550e8400-e29b-41d4-a716-446655440000",
+  "newPassword": "newSecurePassword123"
+}
+```
+
+**Response (200 OK):**
+```
+Password has been reset successfully. You can now login with your new password
+```
+
+**Error Responses:**
+- `400 Bad Request` - Invalid token format or password too short (minimum 6 characters)
+- `400 Bad Request` - "Invalid or expired reset token"
+- `400 Bad Request` - "This reset token has already been used"
+- `400 Bad Request` - "This reset token has expired. Please request a new one"
+
+**Notes:**
+- Tokens expire after 60 minutes (configurable via `password.reset.token.expiry.minutes` property)
+- Tokens are one-time use only
+- Password must be at least 6 characters long
+
 ---
 
 ## 🏥 Appointment Endpoints
