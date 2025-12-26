@@ -101,11 +101,17 @@ public class SecurityConfig {
                 .collect(Collectors.toList());
         
         // Add common production origins if not already present
-        if (!allowedOrigins.contains("https://health-care-7oam.onrender.com")) {
-            allowedOrigins.add("https://health-care-7oam.onrender.com");
+        if (!allowedOrigins.contains("https://adjacent-gianina-health-care-2058c736.koyeb.app")) {
+            allowedOrigins.add("https://adjacent-gianina-health-care-2058c736.koyeb.app");
+        }
+        if (!allowedOrigins.contains("https://healthcare-thera-connect.vercel.app")) {
+            allowedOrigins.add("https://healthcare-thera-connect.vercel.app");
         }
         if (!allowedOrigins.contains("http://localhost:5173")) {
             allowedOrigins.add("http://localhost:5173");
+        }
+        if (!allowedOrigins.contains("http://localhost:8080")) {
+            allowedOrigins.add("http://localhost:8080");
         }
         
         configuration.setAllowedOrigins(allowedOrigins);
