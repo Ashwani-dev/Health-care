@@ -177,22 +177,33 @@ public class AppointmentService {
         // Get paginated results
         Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        // Process status updates
-        List<AppointmentEntity> updatedAppointments = appointmentPage.getContent().stream()
-                .filter(apt -> apt.getStatus().equals("SCHEDULED") &&
-                        (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
-                                (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
-                                        apt.getEndTime().isBefore(LocalTime.now()))))
-                .peek(apt -> {
-                    apt.setStatus("COMPLETED");
-                    appointmentRepository.save(apt);
+        // Process status updates and update the entities in the page content
+        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
+                .map(apt -> {
+                    // Check if appointment should be marked as completed
+                    if (apt.getStatus().equals("SCHEDULED") &&
+                            (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
+                                    (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
+                                            apt.getEndTime().isBefore(LocalTime.now())))) {
+                        apt.setStatus("COMPLETED");
+                        return appointmentRepository.save(apt);
+                    }
+                    return apt;
                 })
                 .toList();
 
-        return appointmentPage.map(this::convertToResponse);
+        // Map the updated content to responses
+        return appointmentPage.map(apt -> {
+            // Find the updated version of this appointment
+            AppointmentEntity updated = updatedContent.stream()
+                    .filter(u -> u.getId().equals(apt.getId()))
+                    .findFirst()
+                    .orElse(apt);
+            return convertToResponse(updated);
+        });
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<PatientAppointmentResponse> getDoctorAppointments(
             Long doctorId,
             LocalDate appointmentDate,
@@ -216,7 +227,30 @@ public class AppointmentService {
         // Get paginated results
         Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        return appointmentPage.map(this::convertToResponse);
+        // Process status updates and update the entities in the page content
+        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
+                .map(apt -> {
+                    // Check if appointment should be marked as completed
+                    if (apt.getStatus().equals("SCHEDULED") &&
+                            (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
+                                    (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
+                                            apt.getEndTime().isBefore(LocalTime.now())))) {
+                        apt.setStatus("COMPLETED");
+                        return appointmentRepository.save(apt);
+                    }
+                    return apt;
+                })
+                .toList();
+
+        // Map the updated content to responses
+        return appointmentPage.map(apt -> {
+            // Find the updated version of this appointment
+            AppointmentEntity updated = updatedContent.stream()
+                    .filter(u -> u.getId().equals(apt.getId()))
+                    .findFirst()
+                    .orElse(apt);
+            return convertToResponse(updated);
+        });
     }
 
     @Transactional(readOnly = true)
