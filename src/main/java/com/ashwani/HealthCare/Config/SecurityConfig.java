@@ -100,21 +100,18 @@ public class SecurityConfig {
                 .filter(origin -> !origin.isEmpty())
                 .collect(Collectors.toList());
         
-        // Add common production origins if not already present
-        if (!allowedOrigins.contains("https://adjacent-gianina-health-care-2058c736.koyeb.app")) {
-            allowedOrigins.add("https://adjacent-gianina-health-care-2058c736.koyeb.app");
-        }
+        // Add common production/development origins if not already present
+        // Note: Only add frontend origins, not the backend URL
         if (!allowedOrigins.contains("https://healthcare-thera-connect.vercel.app")) {
             allowedOrigins.add("https://healthcare-thera-connect.vercel.app");
         }
         if (!allowedOrigins.contains("http://localhost:5173")) {
             allowedOrigins.add("http://localhost:5173");
         }
-        if (!allowedOrigins.contains("http://localhost:8080")) {
-            allowedOrigins.add("http://localhost:8080");
-        }
-        
-        configuration.setAllowedOrigins(allowedOrigins);
+
+        // Use setAllowedOriginPatterns to support wildcard patterns (e.g., https://*.ngrok-free.app)
+        // This also works with exact origins, so it's safe for production
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
