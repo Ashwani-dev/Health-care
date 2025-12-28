@@ -30,7 +30,7 @@ public class PasswordResetService {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     // Token expiry time in minutes
-    @Value("${password.reset.token.expiry.minutes:60}")
+    @Value("${password.reset.token.expiry.minutes}")
     private int tokenExpiryMinutes;
 
     /**

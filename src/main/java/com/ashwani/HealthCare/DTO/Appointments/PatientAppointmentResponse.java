@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -23,6 +23,6 @@ public class PatientAppointmentResponse {
     private LocalTime endTime;
     private String status = "SCHEDULED";
     private String description;
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
 }

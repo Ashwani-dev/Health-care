@@ -48,7 +48,7 @@ public class PaymentService {
     @Value("${cashfree.secretKey}")
     private String secretKey;
     
-    @Value("${cashfree.webhook.signature.validation.enabled:false}")
+    @Value("${cashfree.webhook.signature.validation.enabled}")
     private boolean signatureValidationEnabled;
 
     @Value("${app.frontend-url}")
@@ -57,7 +57,7 @@ public class PaymentService {
     @Value("${app.backend-url}")
     private String backendUrl;
 
-    @Value("${cashfree.env:SANDBOX}")
+    @Value("${cashfree.env}")
     private String cashfreeEnvironment;
 
     private final Cashfree cashfree;

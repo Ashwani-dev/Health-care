@@ -17,7 +17,7 @@ public class CashfreeConfig {
     private String secretKey;
 
     // Optional environment variable if needed (e.g. "TEST" or "PROD")
-    @Value("${cashfree.env:SANDBOX}")
+    @Value("${cashfree.env}")
     private String environment;
 
     @Bean

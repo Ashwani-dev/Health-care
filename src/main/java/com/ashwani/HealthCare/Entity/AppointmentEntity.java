@@ -10,7 +10,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "appointments")
@@ -50,14 +49,14 @@ public class AppointmentEntity {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
     @Column(name = "cancelled_at")
-    private OffsetDateTime cancelledAt;
+    private LocalDateTime cancelledAt;
 
     @Column
     private Long cancelledBy;
@@ -99,7 +98,7 @@ public class AppointmentEntity {
         }
 
         this.status = "CANCELLED";
-        this.cancelledAt = OffsetDateTime.now();
+        this.cancelledAt = LocalDateTime.now();
         this.cancelledBy = cancelledByUser;
     }
 
