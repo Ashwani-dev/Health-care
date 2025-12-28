@@ -3,8 +3,12 @@ package com.ashwani.HealthCare.Entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 
@@ -12,6 +16,7 @@ import java.time.LocalTime;
 @Table(name = "doctoravailability")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class DoctorAvailability {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,4 +38,12 @@ public class DoctorAvailability {
 
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable = true;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

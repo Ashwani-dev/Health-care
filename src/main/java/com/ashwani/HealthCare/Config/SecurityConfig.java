@@ -100,14 +100,8 @@ public class SecurityConfig {
                 .filter(origin -> !origin.isEmpty())
                 .collect(Collectors.toList());
         
-        // Add common production/development origins if not already present
-        // Note: Only add frontend origins, not the backend URL
-        if (!allowedOrigins.contains("https://healthcare-thera-connect.vercel.app")) {
-            allowedOrigins.add("https://healthcare-thera-connect.vercel.app");
-        }
-        if (!allowedOrigins.contains("http://localhost:5173")) {
-            allowedOrigins.add("http://localhost:5173");
-        }
+        // Use only origins provided via environment variable; do not hardcode origins here.
+        // This prevents exposing endpoint URLs in source code.
 
         // Use setAllowedOriginPatterns to support wildcard patterns (e.g., https://*.ngrok-free.app)
         // This also works with exact origins, so it's safe for production

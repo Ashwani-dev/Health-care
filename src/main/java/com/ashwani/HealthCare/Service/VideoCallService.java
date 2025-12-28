@@ -71,7 +71,6 @@ public class VideoCallService {
 
         session.setPatientAccessToken(patientToken);
         session.setDoctorAccessToken(doctorToken);
-        session.setCreatedAt(LocalDateTime.now());
 
         VideoCallSessionsEntity savedSession = videoCallSessionsRepository.save(session);
 

@@ -3,7 +3,9 @@ package com.ashwani.HealthCare.Entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.time.OffsetDateTime;
 @Table(name = "appointments")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class AppointmentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,8 +48,13 @@ public class AppointmentEntity {
 
     private String description;
 
-    @CreationTimestamp
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 
     @Column(name = "cancelled_at")
     private OffsetDateTime cancelledAt;

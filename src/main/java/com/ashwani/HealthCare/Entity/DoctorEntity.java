@@ -5,11 +5,17 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "doctors")
 @Setter
 @Getter
+@EntityListeners(AuditingEntityListener.class)
 public class DoctorEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,4 +64,12 @@ public class DoctorEntity {
     @Size(min = 5, max = 50, message = "License number must be between 5 and 50 characters")
     @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "License number must be alphanumeric with optional hyphens")
     private String license_number;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

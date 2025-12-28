@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Setter
@@ -19,4 +20,6 @@ public class AvailabilityResponseDto {
     private LocalTime startTime;
     private LocalTime endTime;
     private boolean isAvailable;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

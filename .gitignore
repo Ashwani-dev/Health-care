@@ -37,3 +37,7 @@ build/
 
 ### logs ###
 /logs
+
+### DB Migrations ###
+src/main/resources/db/migration
+DATABASE_MIGRATIONS.md
