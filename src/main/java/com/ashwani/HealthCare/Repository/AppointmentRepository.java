@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.lang.NonNull;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -37,9 +39,13 @@ public interface AppointmentRepository extends
            "WHERE a.doctor = :doctor")
     List<AppointmentEntity> findByDoctor(@Param("doctor") DoctorEntity doctor);
 
-    boolean existsByDoctorAndAppointmentDateAndStartTime(DoctorEntity doctor, LocalDate date,
-                                                         LocalTime startTime);
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM AppointmentEntity a " +
+           "WHERE a.doctor = :doctor AND a.appointmentDate = :date AND a.startTime = :startTime")
+    boolean existsByDoctorAndAppointmentDateAndStartTime(@Param("doctor") DoctorEntity doctor,
+                                                         @Param("date") LocalDate date,
+                                                         @Param("startTime") LocalTime startTime);
 
     @EntityGraph(attributePaths = {"patient", "doctor", "paymentDetails"})
-    Optional<AppointmentEntity> findById(Long id);
+    @NonNull
+    Optional<AppointmentEntity> findById(@NonNull Long id);
 }

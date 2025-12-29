@@ -2,7 +2,6 @@ package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.Appointments.BookAppointmentRequest;
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
-import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,25 +31,22 @@ public class AppointmentController {
     private AppointmentService appointmentService;
 
     /**
-     * Book an appointment with a doctor
-     * @param request Appointment booking request
-     * @return Created appointment details or validation error
+     * DEPRECATED: Direct booking endpoint - no longer used
+     * All appointments now go through the payment flow:
+     * 1. Create hold via POST /hold
+     * 2. Complete payment via Cashfree
+     * 3. PaymentEventListener creates the appointment automatically
+     *
+     * This endpoint is kept for reference but is disabled.
+     * To re-enable, uncomment the @PostMapping annotation.
      */
-    @PostMapping("/book")
+    // @PostMapping("/book")
     public ResponseEntity<?> bookAppointment(@RequestBody BookAppointmentRequest request){
-        try {
-            AppointmentEntity appointment = appointmentService.bookAppointment(
-                    request.getPatientId(),
-                    request.getDoctorId(),
-                    request.getDate(),
-                    request.getStartTime(),
-                    request.getReason(),
-                    -1L
-            );
-            return ResponseEntity.ok(appointment);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.GONE)
+                .body(Map.of(
+                        "error", "This endpoint is deprecated",
+                        "message", "Please use POST /hold to create an appointment hold, then complete payment. The appointment will be created automatically after successful payment."
+                ));
     }
 
     /**

@@ -57,18 +57,23 @@ public class PaymentEventListener {
             // 3. Convert customerId to Long
             Long patientId = Long.parseLong(event.getCustomerId());
 
-            // 4. Call your existing bookAppointment method
+            // 4. Call bookAppointment with hold reference to skip duplicate slot check
+            // The slot was already validated during hold creation, so we can safely book it
             AppointmentEntity appointment = appointmentService.bookAppointment(
                     patientId,
                     hold.getDoctorId(),
                     hold.getDate(),
                     hold.getStartTime(),
                     hold.getReason(),
-                    event.getPaymentId()
+                    event.getPaymentId(),
+                    event.getAppointmentHoldReference()  // Pass hold reference
             );
 
             // 5. Clean up the hold
             appointmentHoldRepository.deleteById(hold.getId());
+
+            log.info("✅ Successfully created appointment {} for payment {} from hold {}",
+                    appointment.getId(), event.getOrderId(), event.getAppointmentHoldReference());
 
         } catch (Exception e) {
             log.error("FAILED to create appointment for payment {}: {}",

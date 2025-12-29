@@ -1,101 +1,435 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Appointment Scheduled</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #333;
+      color: #2D3748;
+      background: linear-gradient(135deg, #E8F5F7 0%, #F7F3FF 100%);
+      padding: 40px 20px;
+    }
+    .email-container {
       max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 0 auto;T
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
     }
     .header {
-      color: #2c3e50;
+      background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+      color: #FFFFFF;
+      padding: 40px 30px;
       text-align: center;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
+      position: relative;
     }
-    .appointment-details {
-      background: #f8f9fa;
-      padding: 15px;
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #48BB78, #38B2AC, #4299E1);
+    }
+    .header-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      font-size: 16px;
+      opacity: 0.95;
+      font-weight: 400;
+    }
+    .priority-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #F6AD55 0%, #ED8936 100%);
+      color: #FFFFFF;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 12px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #2D3748;
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+    .greeting-name {
+      color: #4A5568;
+      font-weight: 700;
+    }
+    .alert-box {
+      background: linear-gradient(135deg, #E6FFFA 0%, #E8F5F7 100%);
+      border-left: 4px solid #38B2AC;
+      padding: 20px;
       border-radius: 8px;
-      margin: 20px 0;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
     }
-    .appointment-details p {
-      margin: 8px 0;
+    .alert-box::before {
+      content: '📋';
+      font-size: 28px;
+      margin-right: 16px;
+    }
+    .alert-box p {
+      color: #234E52;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .patient-card {
+      background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      border: 1px solid #E2E8F0;
+    }
+    .patient-card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #E2E8F0;
+    }
+    .patient-avatar {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-right: 16px;
+      flex-shrink: 0;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .patient-info {
+      flex: 1;
+    }
+    .patient-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2D3748;
+      margin-bottom: 4px;
+    }
+    .patient-label {
+      font-size: 12px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .appointment-card-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #718096;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .detail-row {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .detail-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .detail-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+      flex-shrink: 0;
+    }
+    .detail-content {
+      flex: 1;
+    }
+    .detail-label {
+      font-size: 13px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 16px;
+      color: #2D3748;
+      font-weight: 600;
+    }
+    .description-box {
+      background: linear-gradient(135deg, #FFF9E6 0%, #FEFCF3 100%);
+      border-left: 4px solid #ECC94B;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .description-box .detail-label {
+      color: #975A16;
+      margin-bottom: 8px;
+    }
+    .description-box .detail-value {
+      color: #744210;
+      font-weight: 500;
+      line-height: 1.6;
+      font-size: 15px;
     }
     .button-container {
       display: flex;
-      gap: 10px;
-      margin: 20px 0;
-      flex-wrap: wrap;
+      gap: 12px;
+      margin: 32px 0;
+      flex-direction: column;
     }
     .button {
       display: inline-block;
-      padding: 12px 20px;
+      padding: 16px 28px;
       text-decoration: none;
-      border-radius: 6px;
-      font-weight: 500;
+      border-radius: 10px;
+      font-weight: 600;
       text-align: center;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
     }
     .button-primary {
-      background: #3498db;
-      color: white;
+      background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
     }
-    .button-danger {
-      background: #e74c3c;
-      color: white;
+    .button-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
     }
-    .button:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
+    .button-secondary {
+      background: #FFFFFF;
+      color: #4A5568;
+      border: 2px solid #4A5568;
+    }
+    .button-secondary:hover {
+      background: #F7FAFC;
+      transform: translateY(-2px);
+    }
+    .quick-actions {
+      background: #F7FAFC;
+      border-radius: 10px;
+      padding: 24px;
+      margin-top: 32px;
+      border: 1px solid #E2E8F0;
+    }
+    .quick-actions h3 {
+      color: #2D3748;
+      font-size: 16px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .quick-actions p {
+      color: #4A5568;
+      font-size: 14px;
+      line-height: 1.6;
     }
     .footer {
-      margin-top: 30px;
-      font-size: 0.9em;
-      color: #7f8c8d;
+      background: #F7FAFC;
+      padding: 30px;
       text-align: center;
+      border-top: 1px solid #E2E8F0;
     }
-    @media (max-width: 480px) {
-      .button-container {
+    .footer-brand {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+    .footer-links {
+      margin-top: 16px;
+    }
+    .footer-link {
+      color: #4A5568;
+      text-decoration: none;
+      font-size: 13px;
+      margin: 0 10px;
+      font-weight: 500;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #E2E8F0, transparent);
+      margin: 24px 0;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 10px;
+      }
+      .header {
+        padding: 30px 20px;
+      }
+      .header h1 {
+        font-size: 24px;
+      }
+      .content {
+        padding: 30px 20px;
+      }
+      .patient-card {
+        padding: 20px;
+      }
+      .patient-card-header {
         flex-direction: column;
+        align-items: flex-start;
+      }
+      .patient-avatar {
+        margin-bottom: 12px;
       }
       .button {
-        width: 100%;
+        padding: 14px 20px;
+        font-size: 15px;
       }
     }
   </style>
 </head>
 <body>
-<h1 class="header">New Appointment Scheduled</h1>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-icon">📅</div>
+      <h1>New Patient Appointment</h1>
+      <p>You have a new session scheduled</p>
+      <div class="priority-badge">Action Required</div>
+    </div>
 
-<p>Dr. <span th:text="${doctorName}">Smith</span>,</p>
+    <!-- Content -->
+    <div class="content">
+      <p class="greeting">Dear <span class="greeting-name">Dr. <span th:text="${doctorName}">Smith</span></span>,</p>
 
-<div class="appointment-details">
-  <p>You have a new appointment:</p>
-  <p><strong>Patient:</strong> <span th:text="${patientName}">John Doe</span></p>
-  <p><strong>Date:</strong> <span th:text="${#temporals.format(date, 'MMMM dd, yyyy')}">January 01, 2023</span></p>
-  <p><strong>Time:</strong> <span th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</span></p>
-  <p><strong>Patient Email:</strong> <span th:text="${patientEmail}">Not Available</span></p>
-  <p><strong>Problem description:</strong> <span th:text="${description}">Not comfortable to share problem on mail</span></p>
-</div>
+      <div class="alert-box">
+        <p>A new patient has booked an appointment with you. Please review the details below.</p>
+      </div>
 
-<div class="button-container">
-  <a th:href="${joinLink}" class="button button-primary">
-    Join Video Session
-  </a>
-  <a th:href="${cancelLink}" class="button button-danger">
-    Cancel or Reschedule
-  </a>
-</div>
+      <!-- Patient Information Card -->
+      <div class="patient-card">
+        <div class="patient-card-header">
+          <div class="patient-avatar">👤</div>
+          <div class="patient-info">
+            <div class="patient-name" th:text="${patientName}">John Doe</div>
+            <div class="patient-label">New Patient</div>
+          </div>
+        </div>
 
-<div class="footer">
-  <p>This appointment has been added to your schedule.</p>
-</div>
+        <div class="appointment-card-title">Session Details</div>
+
+        <div class="detail-row">
+          <div class="detail-icon" style="background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);">📅</div>
+          <div class="detail-content">
+            <div class="detail-label">Appointment Date</div>
+            <div class="detail-value" th:text="${#temporals.format(date, 'EEEE, MMMM dd, yyyy')}">Monday, January 01, 2023</div>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-icon" style="background: linear-gradient(135deg, #ED8936 0%, #DD6B20 100%);">🕒</div>
+          <div class="detail-content">
+            <div class="detail-label">Session Time</div>
+            <div class="detail-value" th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</div>
+          </div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-icon" style="background: linear-gradient(135deg, #9F7AEA 0%, #805AD5 100%);">📧</div>
+          <div class="detail-content">
+            <div class="detail-label">Patient Email</div>
+            <div class="detail-value" th:text="${patientEmail}">patient@example.com</div>
+          </div>
+        </div>
+
+        <!-- Patient Concern -->
+        <div class="description-box">
+          <div class="detail-label">💬 Patient's Primary Concern</div>
+          <div class="detail-value" th:text="${description}">Patient prefers to discuss during the session</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-container">
+        <a th:href="${joinLink}" class="button button-primary">
+          🎥 Join Video Session
+        </a>
+        <a th:href="${cancelLink}" class="button button-secondary">
+          Reschedule or Cancel
+        </a>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <h3>📝 Preparation Tips</h3>
+        <p>This appointment has been automatically added to your calendar. Please review any patient notes and ensure you're prepared 10 minutes before the scheduled time.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-brand">Thera-connect</div>
+      <p class="footer-text">Professional Mental Wellness Platform</p>
+      <p class="footer-text">Supporting therapists in delivering quality care</p>
+      <div class="footer-links">
+        <a href="#" class="footer-link">Dashboard</a>
+        <a href="#" class="footer-link">Support</a>
+        <a href="#" class="footer-link">Resources</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

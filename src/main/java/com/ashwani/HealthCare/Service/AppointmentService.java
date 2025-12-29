@@ -53,18 +53,10 @@ public class AppointmentService {
         );
     }
 
-    public String createAppointmentHold(Long patientId, Long doctorId, LocalDate date,
-                                        LocalTime startTime, String description) throws Exception {
-
-        // Validate availability first
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
-
-        if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
-            throw new Exception("Time slot already booked");
-        }
-
-        // Check if slot is within doctor's availability
+    /**
+     * Validates if a time slot is within doctor's availability schedule
+     */
+    private void validateDoctorAvailability(DoctorEntity doctor, LocalDate date, LocalTime startTime) throws Exception {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         List<DoctorAvailability> availabilities = doctorAvailabilityRepository.findByDoctorAndDayOfWeek(doctor, dayOfWeek);
 
@@ -76,6 +68,60 @@ public class AppointmentService {
         if (!isAvailable) {
             throw new Exception("Doctor is not available at this time");
         }
+    }
+
+    /**
+     * Checks if a time slot is already booked for a doctor
+     */
+    private void validateSlotNotBooked(DoctorEntity doctor, LocalDate date, LocalTime startTime) throws Exception {
+        if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
+            throw new Exception("Time slot already booked");
+        }
+    }
+
+    /**
+     * Updates appointment status to COMPLETED if past end time
+     * Returns updated appointment or original if no update needed
+     */
+    private AppointmentEntity updateAppointmentStatusIfNeeded(AppointmentEntity appointment) {
+        if (appointment.getStatus().equals("SCHEDULED") &&
+                (appointment.getAppointmentDate().isBefore(LocalDate.now()) ||
+                        (appointment.getAppointmentDate().isEqual(LocalDate.now()) &&
+                                appointment.getEndTime().isBefore(LocalTime.now())))) {
+            appointment.setStatus("COMPLETED");
+            return appointmentRepository.save(appointment);
+        }
+        return appointment;
+    }
+
+    /**
+     * Processes a page of appointments, updating statuses and converting to responses
+     */
+    private Page<PatientAppointmentResponse> processAppointmentPage(Page<AppointmentEntity> appointmentPage) {
+        // Update statuses for all appointments in the page
+        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
+                .map(this::updateAppointmentStatusIfNeeded)
+                .toList();
+
+        // Convert to response DTOs
+        return appointmentPage.map(apt -> {
+            AppointmentEntity updated = updatedContent.stream()
+                    .filter(u -> u.getId().equals(apt.getId()))
+                    .findFirst()
+                    .orElse(apt);
+            return convertToResponse(updated);
+        });
+    }
+
+    public String createAppointmentHold(Long patientId, Long doctorId, LocalDate date,
+                                        LocalTime startTime, String description) throws Exception {
+
+        // Validate doctor exists and slot is available
+        DoctorEntity doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
+
+        validateSlotNotBooked(doctor, date, startTime);
+        validateDoctorAvailability(doctor, date, startTime);
 
         // Create and save the hold entity
         AppointmentHold hold = new AppointmentHold();
@@ -96,9 +142,11 @@ public class AppointmentService {
         return savedHold.getHoldReference();
     }
 
+
     @Transactional
     public AppointmentEntity bookAppointment(Long patientId, Long doctorId, LocalDate date,
-                                             LocalTime startTime, String description, Long paymentId) throws Exception {
+                                             LocalTime startTime, String description, Long paymentId,
+                                             String holdReference) throws Exception {
         PatientEntity patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));
 
@@ -112,23 +160,16 @@ public class AppointmentService {
             throw new Exception("Payment is not completed");
         }
 
-        // Check if slot is available
-        if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
-            throw new Exception("Time slot already booked");
+        // Only check for existing bookings if NOT booking from a valid hold
+        // When holdReference is provided, the slot was already validated during hold creation
+        if (holdReference == null) {
+            validateSlotNotBooked(doctor, date, startTime);
+        } else {
+            log.info("Booking from hold reference: {}, skipping duplicate slot check", holdReference);
         }
 
-        // Check if slot is within doctor's availability
-        DayOfWeek dayOfWeek = date.getDayOfWeek();
-        List<DoctorAvailability> availabilities = doctorAvailabilityRepository.findByDoctorAndDayOfWeek(doctor, dayOfWeek);
-
-        boolean isAvailable = availabilities.stream()
-                .anyMatch(av -> av.getIsAvailable() &&
-                        !startTime.isBefore(av.getStartTime()) &&
-                        !startTime.isAfter(av.getEndTime()));
-
-        if (!isAvailable) {
-            throw new Exception("Doctor is not available at this time");
-        }
+        // Validate doctor availability
+        validateDoctorAvailability(doctor, date, startTime);
 
         // Default duration - could be parameterized
         LocalTime endTime = startTime.plusMinutes(30);
@@ -143,6 +184,8 @@ public class AppointmentService {
         appointment.setDescription(description);
         appointment.setPaymentDetails(payment);
         appointmentRepository.save(appointment);
+
+        log.info("✅ SUCCESS: Appointment saved successfully with appointmentId: {}", appointment.getId());
 
         emailService.sendAppointmentConfirmation(
                 doctor,
@@ -177,30 +220,8 @@ public class AppointmentService {
         // Get paginated results
         Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        // Process status updates and update the entities in the page content
-        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
-                .map(apt -> {
-                    // Check if appointment should be marked as completed
-                    if (apt.getStatus().equals("SCHEDULED") &&
-                            (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
-                                    (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
-                                            apt.getEndTime().isBefore(LocalTime.now())))) {
-                        apt.setStatus("COMPLETED");
-                        return appointmentRepository.save(apt);
-                    }
-                    return apt;
-                })
-                .toList();
-
-        // Map the updated content to responses
-        return appointmentPage.map(apt -> {
-            // Find the updated version of this appointment
-            AppointmentEntity updated = updatedContent.stream()
-                    .filter(u -> u.getId().equals(apt.getId()))
-                    .findFirst()
-                    .orElse(apt);
-            return convertToResponse(updated);
-        });
+        // Process and convert to response DTOs
+        return processAppointmentPage(appointmentPage);
     }
 
     @Transactional
@@ -213,9 +234,7 @@ public class AppointmentService {
 
         // Verify doctor exists using existsById (more efficient than findById)
         if (!doctorRepository.existsById(doctorId)) {
-            throw new RuntimeException(
-                    "Doctor not found with ID: " + doctorId
-            );
+            throw new RuntimeException("Doctor not found with ID: " + doctorId);
         }
 
         // Combine all specifications
@@ -227,30 +246,8 @@ public class AppointmentService {
         // Get paginated results
         Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
-        // Process status updates and update the entities in the page content
-        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
-                .map(apt -> {
-                    // Check if appointment should be marked as completed
-                    if (apt.getStatus().equals("SCHEDULED") &&
-                            (apt.getAppointmentDate().isBefore(LocalDate.now()) ||
-                                    (apt.getAppointmentDate().isEqual(LocalDate.now()) &&
-                                            apt.getEndTime().isBefore(LocalTime.now())))) {
-                        apt.setStatus("COMPLETED");
-                        return appointmentRepository.save(apt);
-                    }
-                    return apt;
-                })
-                .toList();
-
-        // Map the updated content to responses
-        return appointmentPage.map(apt -> {
-            // Find the updated version of this appointment
-            AppointmentEntity updated = updatedContent.stream()
-                    .filter(u -> u.getId().equals(apt.getId()))
-                    .findFirst()
-                    .orElse(apt);
-            return convertToResponse(updated);
-        });
+        // Process and convert to response DTOs
+        return processAppointmentPage(appointmentPage);
     }
 
     @Transactional(readOnly = true)

@@ -1,110 +1,358 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Appointment Confirmation</title>
+    <title>Your Appointment is Confirmed</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #2D3748;
+            background: linear-gradient(135deg, #E8F5F7 0%, #F7F3FF 100%);
+            padding: 40px 20px;
+        }
+        .email-container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
         .header {
-            color: #2c3e50;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            color: #FFFFFF;
+            padding: 40px 30px;
             text-align: center;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+        }
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 32px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #2D3748;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+        .greeting-name {
+            color: #667EEA;
+            font-weight: 600;
+        }
+        .success-message {
+            background: linear-gradient(135deg, #E6FFFA 0%, #E8F5F7 100%);
+            border-left: 4px solid #38B2AC;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 32px;
+        }
+        .success-message p {
+            color: #234E52;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .appointment-card {
+            background: linear-gradient(135deg, #F7FAFC 0%, #EDF2F7 100%);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 28px;
+            border: 1px solid #E2E8F0;
+        }
+        .appointment-card-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #718096;
+            font-weight: 600;
             margin-bottom: 20px;
         }
-        .appointment-details {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
+        .detail-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E2E8F0;
         }
-        .appointment-details p {
-            margin: 8px 0;
+        .detail-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .detail-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        .detail-icon::before {
+            content: '';
+            font-size: 20px;
+        }
+        .detail-content {
+            flex: 1;
+        }
+        .detail-label {
+            font-size: 13px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-size: 16px;
+            color: #2D3748;
+            font-weight: 600;
+        }
+        .reminder-box {
+            background: linear-gradient(135deg, #FFF5F5 0%, #FED7E2 100%);
+            border-left: 4px solid #FC8181;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 32px;
+        }
+        .reminder-box p {
+            color: #742A2A;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        .reminder-box p::before {
+            content: '⏰';
+            font-size: 20px;
+            margin-right: 12px;
         }
         .button-container {
             display: flex;
-            gap: 10px;
-            margin: 25px 0;
-            flex-wrap: wrap;
+            gap: 12px;
+            margin: 32px 0;
+            flex-direction: column;
         }
         .button {
             display: inline-block;
-            padding: 12px 20px;
+            padding: 16px 28px;
             text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
+            border-radius: 10px;
+            font-weight: 600;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
         }
         .button-primary {
-            background: #3498db;
-            color: white;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
-        .button-danger {
-            background: #e74c3c;
-            color: white;
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
-        .button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+        .button-secondary {
+            background: #FFFFFF;
+            color: #667EEA;
+            border: 2px solid #667EEA;
         }
-        .reminder {
-            font-style: italic;
-            color: #7f8c8d;
-            margin: 15px 0;
+        .button-secondary:hover {
+            background: #F7FAFC;
+            transform: translateY(-2px);
+        }
+        .support-section {
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF5D6 100%);
+            border-radius: 10px;
+            padding: 24px;
+            margin-top: 32px;
+            text-align: center;
+            border: 1px solid #FBD38D;
+        }
+        .support-section h3 {
+            color: #744210;
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .support-section p {
+            color: #975A16;
+            font-size: 14px;
+            line-height: 1.6;
         }
         .footer {
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #7f8c8d;
+            background: #F7FAFC;
+            padding: 30px;
             text-align: center;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
+            border-top: 1px solid #E2E8F0;
         }
-        @media (max-width: 480px) {
-            .button-container {
-                flex-direction: column;
+        .footer-brand {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        .footer-links {
+            margin-top: 16px;
+        }
+        .footer-link {
+            color: #667EEA;
+            text-decoration: none;
+            font-size: 13px;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        .footer-link:hover {
+            text-decoration: underline;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #E2E8F0, transparent);
+            margin: 24px 0;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+            .header {
+                padding: 30px 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .appointment-card {
+                padding: 20px;
             }
             .button {
-                width: 100%;
+                padding: 14px 20px;
+                font-size: 15px;
             }
         }
     </style>
 </head>
 <body>
-<h1 class="header">Appointment Confirmation</h1>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">✓</div>
+            <h1>Appointment Confirmed</h1>
+            <p>Your mental wellness session is scheduled</p>
+        </div>
 
-<p>Dear <span th:text="${patientName}">Patient</span>,</p>
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hello <span class="greeting-name" th:text="${patientName}">Patient</span>,</p>
 
-<div class="appointment-details">
-    <p>Your appointment has been successfully scheduled:</p>
-    <p><strong>Doctor:</strong> <span th:text="${doctorName}">Dr. Smith</span></p>
-    <p><strong>Date:</strong> <span th:text="${#temporals.format(date, 'MMMM dd, yyyy')}">January 01, 2023</span></p>
-    <p><strong>Time:</strong> <span th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</span></p>
-</div>
+            <div class="success-message">
+                <p>✨ Great! Your appointment has been successfully scheduled. We're here to support your wellness journey.</p>
+            </div>
 
-<p class="reminder">Please arrive 10 minutes before your scheduled time.</p>
+            <!-- Appointment Details Card -->
+            <div class="appointment-card">
+                <div class="appointment-card-title">Appointment Details</div>
 
-<div class="button-container">
-    <a th:href="${joinLink}" class="button button-primary">
-        Join Video Session
-    </a>
-    <a th:href="${cancelLink}" class="button button-danger">
-        Cancel or Reschedule
-    </a>
-</div>
+                <div class="detail-row">
+                    <div class="detail-icon" style="background: linear-gradient(135deg, #48BB78 0%, #38A169 100%);">👨‍⚕️</div>
+                    <div class="detail-content">
+                        <div class="detail-label">Your Therapist</div>
+                        <div class="detail-value" th:text="${doctorName}">Dr. Smith</div>
+                    </div>
+                </div>
 
-<div class="footer">
-    <p>Best regards,<br>The Healthcare Team</p>
-    <p>If you didn't request this appointment, please contact us immediately.</p>
-</div>
+                <div class="detail-row">
+                    <div class="detail-icon" style="background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);">📅</div>
+                    <div class="detail-content">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value" th:text="${#temporals.format(date, 'EEEE, MMMM dd, yyyy')}">Monday, January 01, 2023</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon" style="background: linear-gradient(135deg, #ED8936 0%, #DD6B20 100%);">🕒</div>
+                    <div class="detail-content">
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value" th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reminder -->
+            <div class="reminder-box">
+                <p>Please join the session 10 minutes early to ensure a smooth start to your appointment.</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-container">
+                <a th:href="${joinLink}" class="button button-primary">
+                    🎥 Join Video Session
+                </a>
+                <a th:href="${cancelLink}" class="button button-secondary">
+                    Reschedule or Cancel
+                </a>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Support Section -->
+            <div class="support-section">
+                <h3>Need Help?</h3>
+                <p>If you have any questions or need to make changes to your appointment, we're here to help. Contact our support team anytime.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-brand"></div>
+            <p class="footer-text">Your mental wellness is our priority</p>
+            <p class="footer-text">If you didn't request this appointment, please contact us immediately.</p>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Support</a>
+                <a href="#" class="footer-link">Contact Us</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
