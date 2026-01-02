@@ -106,8 +106,10 @@ public class AppointmentController {
     /**
      * Get paginated appointments for a doctor
      * @param doctorId Doctor ID (path)
-     * @param appointmentDate Optional date filter (YYYY-MM-DD)
+     * @param appointmentStartDate Optional start date filter (YYYY-MM-DD)
+     * @param appointmentEndDate Optional end date filter (YYYY-MM-DD)
      * @param startTime Optional start time filter (HH:MM:SS)
+     * @param endTime Optional end time filter (HH:MM:SS)
      * @param status Optional status filter
      * @param pageable Pageable configuration (defaults: sort by date ASC)
      * @param assembler HATEOAS assembler
@@ -116,14 +118,16 @@ public class AppointmentController {
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getDoctorAppointments(
             @PathVariable Long doctorId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentStartDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentEndDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
             @RequestParam(required = false) String status,
             @PageableDefault(sort = "appointmentDate", direction = Sort.Direction.ASC) Pageable pageable,
             PagedResourcesAssembler<PatientAppointmentResponse> assembler) {
 
         Page<PatientAppointmentResponse> appointments = appointmentService.getDoctorAppointments(
-                doctorId, appointmentDate, startTime, status, pageable);
+                doctorId, appointmentStartDate, appointmentEndDate, startTime, endTime, status, pageable);
 
         return ResponseEntity.ok(assembler.toModel(appointments));
     }
@@ -131,8 +135,10 @@ public class AppointmentController {
     /**
      * Get paginated appointments for a patient
      * @param patientId Patient ID (path)
-     * @param appointmentDate Optional date filter (YYYY-MM-DD)
+     * @param appointmentStartDate Optional start date filter (YYYY-MM-DD)
+     * @param appointmentEndDate Optional end date filter (YYYY-MM-DD)
      * @param startTime Optional start time filter (HH:MM:SS)
+     * @param endTime Optional end time filter (HH:MM:SS)
      * @param status Optional status filter
      * @param pageable Pageable configuration (defaults: sort by date ASC)
      * @param assembler HATEOAS assembler
@@ -141,14 +147,16 @@ public class AppointmentController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> getPatientAppointments(
             @PathVariable Long patientId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentStartDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentEndDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime,
             @RequestParam(required = false) String status,
             @PageableDefault(sort = "appointmentDate", direction = Sort.Direction.ASC) Pageable pageable,
             PagedResourcesAssembler<PatientAppointmentResponse> assembler) {
 
         Page<PatientAppointmentResponse> appointments = appointmentService.getPatientAppointments(
-                patientId, appointmentDate, startTime, status, pageable);
+                patientId, appointmentStartDate, appointmentEndDate, startTime, endTime, status, pageable);
 
         return ResponseEntity.ok(assembler.toModel(appointments));
     }

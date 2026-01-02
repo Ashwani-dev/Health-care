@@ -694,32 +694,65 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
 ### 1. Database Optimization
 
 ```java
-// Use pagination for large datasets
+// Use pagination for large datasets with date and time range filtering
 @GetMapping("/doctor/{doctorId}")
 public ResponseEntity<PagedModel<EntityModel<PatientAppointmentResponse>>> 
-    getDoctorAppointments(@PathVariable Long doctorId,
+    getDoctorAppointments(
+                         @PathVariable Long doctorId,
+                         @RequestParam(required = false) LocalDate appointmentStartDate,
+                         @RequestParam(required = false) LocalDate appointmentEndDate,
+                         @RequestParam(required = false) LocalTime startTime,
+                         @RequestParam(required = false) LocalTime endTime,
+                         @RequestParam(required = false) String status,
                          @PageableDefault(sort = "appointmentDate", direction = Sort.Direction.ASC) 
                          Pageable pageable) {
     
     Page<PatientAppointmentResponse> appointments = 
-        appointmentService.getDoctorAppointments(doctorId, pageable);
+        appointmentService.getDoctorAppointments(
+            doctorId, appointmentStartDate, appointmentEndDate, 
+            startTime, endTime, status, pageable);
     
     return ResponseEntity.ok(assembler.toModel(appointments));
 }
 
-// Use specifications for dynamic queries
+// Use specifications for dynamic queries with range support
 public class AppointmentSpecifications {
     
     public static Specification<AppointmentEntity> hasDoctor(Long doctorId) {
         return (root, query, cb) -> cb.equal(root.get("doctorId"), doctorId);
     }
     
-    public static Specification<AppointmentEntity> hasDate(LocalDate date) {
-        return (root, query, cb) -> cb.equal(root.get("appointmentDate"), date);
+    public static Specification<AppointmentEntity> hasAppointmentDateRange(
+            LocalDate startDate, LocalDate endDate) {
+        return (root, query, cb) -> {
+            if (startDate == null && endDate == null) return null;
+            if (startDate != null && endDate != null) {
+                return cb.between(root.get("appointmentDate"), startDate, endDate);
+            }
+            if (startDate != null) {
+                return cb.greaterThanOrEqualTo(root.get("appointmentDate"), startDate);
+            }
+            return cb.lessThanOrEqualTo(root.get("appointmentDate"), endDate);
+        };
     }
     
-    public static Specification<AppointmentEntity> hasStatus(AppointmentStatus status) {
-        return (root, query, cb) -> cb.equal(root.get("status"), status);
+    public static Specification<AppointmentEntity> hasTimeRange(
+            LocalTime startTime, LocalTime endTime) {
+        return (root, query, cb) -> {
+            if (startTime == null && endTime == null) return null;
+            if (startTime != null && endTime != null) {
+                return cb.between(root.get("startTime"), startTime, endTime);
+            }
+            if (startTime != null) {
+                return cb.greaterThanOrEqualTo(root.get("startTime"), startTime);
+            }
+            return cb.lessThanOrEqualTo(root.get("startTime"), endTime);
+        };
+    }
+    
+    public static Specification<AppointmentEntity> hasStatus(String status) {
+        return (root, query, cb) -> 
+            status == null ? null : cb.equal(root.get("status"), status);
     }
 }
 ```

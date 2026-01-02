@@ -283,12 +283,32 @@ Authorization: Bearer <jwt-token>
 Get all appointments for a specific doctor with pagination and filtering.
 
 **Query Parameters:**
-- `appointmentDate` (optional): Filter by date (ISO format: YYYY-MM-DD)
+- `appointmentStartDate` (optional): Filter by start date (ISO format: YYYY-MM-DD)
+- `appointmentEndDate` (optional): Filter by end date (ISO format: YYYY-MM-DD)
 - `startTime` (optional): Filter by start time (ISO format: HH:MM:SS)
+- `endTime` (optional): Filter by end time (ISO format: HH:MM:SS)
 - `status` (optional): Filter by status (SCHEDULED, COMPLETED, CANCELLED)
 - `page` (optional): Page number (default: 0)
 - `size` (optional): Page size (default: 20)
 - `sort` (optional): Sort field (default: appointmentDate,asc)
+
+**Example Requests:**
+```
+# Get all appointments for a specific date
+GET /api/appointments/doctor/2?appointmentStartDate=2026-01-15&appointmentEndDate=2026-01-15
+
+# Get appointments in a date range
+GET /api/appointments/doctor/2?appointmentStartDate=2026-01-01&appointmentEndDate=2026-01-31
+
+# Get appointments in a time range
+GET /api/appointments/doctor/2?startTime=09:00:00&endTime=17:00:00
+
+# Combine date range, time range, and status
+GET /api/appointments/doctor/2?appointmentStartDate=2026-01-01&appointmentEndDate=2026-01-31&startTime=09:00:00&endTime=12:00:00&status=SCHEDULED
+
+# Pagination
+GET /api/appointments/doctor/2?page=0&size=10&sort=appointmentDate,desc
+```
 
 **Response (200 OK):**
 ```json
@@ -325,7 +345,33 @@ Get all appointments for a specific doctor with pagination and filtering.
 
 Get all appointments for a specific patient with pagination and filtering.
 
-**Query Parameters:** Same as doctor appointments
+**Query Parameters:**
+- `appointmentStartDate` (optional): Filter by start date (ISO format: YYYY-MM-DD)
+- `appointmentEndDate` (optional): Filter by end date (ISO format: YYYY-MM-DD)
+- `startTime` (optional): Filter by start time (ISO format: HH:MM:SS)
+- `endTime` (optional): Filter by end time (ISO format: HH:MM:SS)
+- `status` (optional): Filter by status (SCHEDULED, COMPLETED, CANCELLED)
+- `page` (optional): Page number (default: 0)
+- `size` (optional): Page size (default: 20)
+- `sort` (optional): Sort field (default: appointmentDate,asc)
+
+**Example Requests:**
+```
+# Get all appointments for a specific date
+GET /api/appointments/patient/1?appointmentStartDate=2026-01-15&appointmentEndDate=2026-01-15
+
+# Get appointments for the next 7 days
+GET /api/appointments/patient/1?appointmentStartDate=2026-01-02&appointmentEndDate=2026-01-09
+
+# Get morning appointments only
+GET /api/appointments/patient/1?startTime=09:00:00&endTime=12:00:00
+
+# Get scheduled appointments for January 2026
+GET /api/appointments/patient/1?appointmentStartDate=2026-01-01&appointmentEndDate=2026-01-31&status=SCHEDULED
+
+# Pagination with sorting
+GET /api/appointments/patient/1?page=0&size=20&sort=appointmentDate,desc
+```
 
 **Response (200 OK):**
 ```json

@@ -30,12 +30,12 @@ public class EmailService {
 
 
     private String generatePatientJoinLink(Long appointmentId) {
-        return "https://yourclinic.com/session/" + appointmentId;
+        return frontendUrl + "video-preview/" + appointmentId + "/PATIENT";
 
     }
 
     private String generateDoctorJoinLink(Long appointmentId) {
-        return "https://yourclinic.com/session/" + appointmentId;
+        return frontendUrl + "video-preview/" + appointmentId + "/DOCTOR";
     }
 
     private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient,
@@ -47,7 +47,6 @@ public class EmailService {
             context.setVariable("date", date);
             context.setVariable("time", time);
             context.setVariable("joinLink", patientJoinLink);
-            context.setVariable("cancelLink", "https://healthcare-thera-connect.vercel.app/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/patient-appointment", context);
             sendEmail(patient.getEmail(), "Appointment Confirmation", htmlContent);
@@ -68,7 +67,6 @@ public class EmailService {
             context.setVariable("time", time);
             context.setVariable("description", description);
             context.setVariable("joinLink", doctorJoinLink);
-            context.setVariable("cancelLink", "https://healthcare-thera-connect.vercel.app/cancel?token=12345");
 
             String htmlContent = templateEngine.process("email/doctor-notification", context);
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);

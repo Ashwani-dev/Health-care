@@ -122,8 +122,11 @@ POST   /api/appointments/book                    - Book appointment
 POST   /api/appointments/hold                    - Create appointment hold
 DELETE /api/appointments/{appointmentId}         - Cancel appointment
 GET    /api/appointments/doctor/{doctorId}       - Get doctor appointments
+         Query params: appointmentStartDate, appointmentEndDate, startTime, endTime, status, page, size, sort
 GET    /api/appointments/patient/{patientId}     - Get patient appointments
+         Query params: appointmentStartDate, appointmentEndDate, startTime, endTime, status, page, size, sort
 GET    /api/appointments/availability/{doctorId} - Get available slots
+         Query params: date (required)
 ```
 
 ### Doctors

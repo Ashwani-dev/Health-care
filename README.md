@@ -169,8 +169,8 @@ For detailed configuration, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 - `POST /api/appointments/book` - Book a new appointment
 - `POST /api/appointments/hold` - Create appointment hold (temporary reservation)
 - `DELETE /api/appointments/{appointmentId}` - Cancel an appointment
-- `GET /api/appointments/doctor/{doctorId}` - Get doctor's appointments (paginated)
-- `GET /api/appointments/patient/{patientId}` - Get patient's appointments (paginated)
+- `GET /api/appointments/doctor/{doctorId}` - Get doctor's appointments (paginated, supports date/time range filtering)
+- `GET /api/appointments/patient/{patientId}` - Get patient's appointments (paginated, supports date/time range filtering)
 - `GET /api/appointments/availability/{doctorId}` - Get available time slots
 
 ### Doctor Endpoints

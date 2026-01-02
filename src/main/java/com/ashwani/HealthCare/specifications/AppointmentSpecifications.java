@@ -40,9 +40,39 @@ public class AppointmentSpecifications {
                 appointmentDate == null ? null : cb.equal(root.get("appointmentDate"), appointmentDate);
     }
 
+    public static Specification<AppointmentEntity> hasAppointmentDateRange(LocalDate startDate, LocalDate endDate) {
+        return (root, query, cb) -> {
+            if (startDate == null && endDate == null) {
+                return null;
+            }
+            if (startDate != null && endDate != null) {
+                return cb.between(root.get("appointmentDate"), startDate, endDate);
+            }
+            if (startDate != null) {
+                return cb.greaterThanOrEqualTo(root.get("appointmentDate"), startDate);
+            }
+            return cb.lessThanOrEqualTo(root.get("appointmentDate"), endDate);
+        };
+    }
+
     public static Specification<AppointmentEntity> hasStartTime(LocalTime startTime) {
         return (root, query, cb) ->
                 startTime == null ? null : cb.equal(root.get("startTime"), startTime);
+    }
+
+    public static Specification<AppointmentEntity> hasTimeRange(LocalTime startTime, LocalTime endTime) {
+        return (root, query, cb) -> {
+            if (startTime == null && endTime == null) {
+                return null;
+            }
+            if (startTime != null && endTime != null) {
+                return cb.between(root.get("startTime"), startTime, endTime);
+            }
+            if (startTime != null) {
+                return cb.greaterThanOrEqualTo(root.get("startTime"), startTime);
+            }
+            return cb.lessThanOrEqualTo(root.get("startTime"), endTime);
+        };
     }
 
     public static Specification<AppointmentEntity> hasStatus(String status) {

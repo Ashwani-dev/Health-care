@@ -21,11 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Video call session management endpoints
 - Doctor search and filter endpoints
 - Availability management endpoints
+- **Appointment Filtering Enhancements**:
+  - Date range filtering with `appointmentStartDate` and `appointmentEndDate` parameters
+  - Time range filtering with `startTime` and `endTime` parameters
+  - Support for flexible querying (single date, date range, time range, or combinations)
+  - Enhanced specifications for efficient database queries with JPA Criteria API
 
 ### Changed
 - Updated all documentation to match current codebase
 - Enhanced error handling across all endpoints
 - Improved logging configuration
+- **Appointment API**:
+  - Updated `/api/appointments/doctor/{doctorId}` to support date and time range filtering
+  - Updated `/api/appointments/patient/{patientId}` to support date and time range filtering
+  - Replaced single `appointmentDate` parameter with `appointmentStartDate` and `appointmentEndDate`
+  - Enhanced `startTime` parameter to work with `endTime` for time range queries
 - **Authentication API**:
   - Separate endpoints for patient and doctor registration/login
   - `/api/auth/patient/register`, `/api/auth/patient/login`
