@@ -77,6 +77,10 @@ public class AppointmentEntity {
         return this.patient != null && this.patient.getId().equals(patientId);
     }
 
+    public boolean belongsToDoctor(Long doctorId) {
+        return this.doctor != null && this.doctor.getId().equals(doctorId);
+    }
+
     public boolean isPastCancellationDeadline() {
         LocalDateTime appointmentDateTime = LocalDateTime.of(
                 this.appointmentDate,

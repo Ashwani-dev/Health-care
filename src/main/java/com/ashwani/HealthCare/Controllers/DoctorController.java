@@ -6,6 +6,7 @@ import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Enums.Gender;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Service.DoctorService;
 import jakarta.validation.Valid;
@@ -72,7 +73,7 @@ public class DoctorController {
      */
     public ResponseEntity<List<DoctorDto>> searchDoctorUsingSearchBar(
             @RequestParam(required = false) String q){
-        return ResponseEntity.ok(doctorService.searchDoctors(q, null));
+        return ResponseEntity.ok(doctorService.searchDoctors(q, null, null));
     }
 
     // Multi-field filter endpoint
@@ -80,12 +81,14 @@ public class DoctorController {
     /**
      * Filter doctors by multiple fields
      * @param specialization Optional specialization filter
+     * @param gender Optional gender filter (MALE, FEMALE, OTHER)
      * @return List of doctors matching filters
      */
     public List<DoctorDto> searchDoctorUsingFilters(
-            @RequestParam(required = false) String specialization
+            @RequestParam(required = false) String specialization,
+            @RequestParam(required = false) Gender gender
     ) {
-        return doctorService.searchDoctors(null, specialization);
+        return doctorService.searchDoctors(null, specialization, gender);
     }
 
     @GetMapping("/{id}")

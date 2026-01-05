@@ -235,16 +235,69 @@ public class AppointmentService {
         AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        vaildateCancellation(appointment, userId);
+        validateCancellation(appointment, userId);
         appointment.cancel(userId);
         appointmentRepository.save(appointment);
+
+        log.info("Appointment {} cancelled by user {}", appointmentId, userId);
     }
 
-    private void vaildateCancellation(AppointmentEntity appointment, Long userId) {
-        if (!appointment.belongsToPatient(userId)){
-            throw new AccessDeniedException("Not your appointment");
+    @Transactional
+    public PatientAppointmentResponse updateAppointment(Long appointmentId, LocalDate appointmentDate,
+                                                        LocalTime startTime, LocalTime endTime) throws Exception {
+        AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        // Only allow updates for SCHEDULED appointments
+        if (!"SCHEDULED".equals(appointment.getStatus())) {
+            throw new IllegalStateException("Can only update appointments with SCHEDULED status. Current status: " + appointment.getStatus());
         }
-        if (appointment.isPastCancellationDeadline()){
+
+        DoctorEntity doctor = appointment.getDoctor();
+
+        // Validate the new slot
+        if (appointmentDate != null && startTime != null) {
+            validateDoctorAvailability(doctor, appointmentDate, startTime);
+
+            // Check if the new slot is not booked (excluding current appointment)
+            boolean isSlotBooked = appointmentRepository.existsByDoctorAndAppointmentDateAndStartTimeAndIdNot(
+                    doctor, appointmentDate, startTime, appointmentId);
+
+            if (isSlotBooked) {
+                throw new Exception("Time slot already booked");
+            }
+        }
+
+        // Update appointment details
+        if (appointmentDate != null) {
+            appointment.setAppointmentDate(appointmentDate);
+        }
+        if (startTime != null) {
+            appointment.setStartTime(startTime);
+        }
+        if (endTime != null) {
+            appointment.setEndTime(endTime);
+        }
+
+        AppointmentEntity updatedAppointment = appointmentRepository.save(appointment);
+        log.info("Updated appointment ID: {} to date: {}, startTime: {}, endTime: {}",
+                appointmentId, appointmentDate, startTime, endTime);
+
+        return convertToResponse(updatedAppointment);
+    }
+
+    private void validateCancellation(AppointmentEntity appointment, Long userId) {
+        // Check if user is either the patient or the doctor
+        boolean isPatient = appointment.belongsToPatient(userId);
+        boolean isDoctor = appointment.belongsToDoctor(userId);
+
+        if (!isPatient && !isDoctor) {
+            throw new AccessDeniedException("You are not authorized to cancel this appointment");
+        }
+
+        // Only patients need to respect the 24-hour cancellation deadline
+        // Doctors can cancel anytime for emergency or scheduling conflicts
+        if (isPatient && appointment.isPastCancellationDeadline()) {
             throw new RuntimeException("24-hour cancellation required");
         }
     }

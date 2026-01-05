@@ -45,6 +45,13 @@ public interface AppointmentRepository extends
                                                          @Param("date") LocalDate date,
                                                          @Param("startTime") LocalTime startTime);
 
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM AppointmentEntity a " +
+           "WHERE a.doctor = :doctor AND a.appointmentDate = :date AND a.startTime = :startTime AND a.id != :appointmentId")
+    boolean existsByDoctorAndAppointmentDateAndStartTimeAndIdNot(@Param("doctor") DoctorEntity doctor,
+                                                                  @Param("date") LocalDate date,
+                                                                  @Param("startTime") LocalTime startTime,
+                                                                  @Param("appointmentId") Long appointmentId);
+
     @EntityGraph(attributePaths = {"patient", "doctor", "paymentDetails"})
     @NonNull
     Optional<AppointmentEntity> findById(@NonNull Long id);

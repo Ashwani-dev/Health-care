@@ -2,6 +2,7 @@ package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.Appointments.BookAppointmentRequest;
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
+import com.ashwani.HealthCare.DTO.Appointments.UpdateAppointmentRequest;
 import com.ashwani.HealthCare.Service.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +98,38 @@ public class AppointmentController {
             ));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "error", e.getMessage(),
+                    "appointmentId", appointmentId
+            ));
+        }
+    }
+
+    /**
+     * Update an existing appointment's date and time
+     * Only allows updates for appointments with SCHEDULED status
+     * @param appointmentId Appointment ID to update
+     * @param request Update request containing new date, startTime, and endTime
+     * @return Updated appointment details or error message
+     */
+    @PutMapping("/{appointmentId}")
+    public ResponseEntity<?> updateAppointment(
+            @PathVariable Long appointmentId,
+            @RequestBody UpdateAppointmentRequest request) {
+        try {
+            PatientAppointmentResponse response = appointmentService.updateAppointment(
+                    appointmentId,
+                    request.getAppointmentDate(),
+                    request.getStartTime(),
+                    request.getEndTime()
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "error", e.getMessage(),
+                    "appointmentId", appointmentId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
                     "error", e.getMessage(),
                     "appointmentId", appointmentId
             ));

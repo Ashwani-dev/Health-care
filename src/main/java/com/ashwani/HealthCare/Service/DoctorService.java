@@ -5,6 +5,7 @@ import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Enums.Gender;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.specifications.DoctorSpecifications;
 import jakarta.validation.Valid;
@@ -37,19 +38,21 @@ public class DoctorService {
                 .or(DoctorSpecifications.nameContains(query));
     }
 
-    private Specification<DoctorEntity> buildFilterSpecification(String specialization) {
-        return Specification.where(DoctorSpecifications.hasSpecialization(specialization));
+    private Specification<DoctorEntity> buildFilterSpecification(String specialization, Gender gender) {
+        return Specification.where(DoctorSpecifications.hasSpecialization(specialization))
+                .and(DoctorSpecifications.hasGender(gender));
     }
 
     @Transactional(readOnly = true)
     public List<DoctorDto> searchDoctors(@Nullable String searchQuery,
-                                         @Nullable String specialization){
+                                         @Nullable String specialization,
+                                         @Nullable Gender gender){
         Specification<DoctorEntity> spec;
         if(searchQuery != null){
             spec = buildSearchSpecification(searchQuery);
         }
         else{
-            spec = buildFilterSpecification(specialization);
+            spec = buildFilterSpecification(specialization, gender);
         }
 
         return doctorRepository.findAll(spec)
