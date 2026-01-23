@@ -8,7 +8,7 @@ import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.DoctorEntity;
 import com.ashwani.HealthCare.Enums.Gender;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
-import com.ashwani.HealthCare.Service.DoctorService;
+import com.ashwani.HealthCare.Service.Doctor.DoctorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;

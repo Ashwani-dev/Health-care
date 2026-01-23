@@ -39,6 +39,7 @@ The Healthcare Management System documentation is organized into several categor
 | [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | Coding standards and best practices | Developers |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | Complete API reference | Developers, Frontend teams |
 | [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) | Database design and schema | Developers, DBAs |
+| [PAYMENT_GATEWAY_FACTORY_GUIDE.md](./PAYMENT_GATEWAY_FACTORY_GUIDE.md) | Payment gateway factory pattern implementation | Developers, DevOps |
 
 ### 📊 Reference Materials
 | Document | Purpose | Audience |
@@ -96,6 +97,7 @@ HealthCare/
 ├── DEPLOYMENT_GUIDE.md          # Deployment instructions
 ├── DEVELOPER_GUIDE.md           # Development standards and guidelines
 ├── DATABASE_SCHEMA.md           # Database design and schema
+├── PAYMENT_GATEWAY_FACTORY_GUIDE.md  # Payment gateway factory pattern
 ├── QUICK_REFERENCE.md           # Quick reference and troubleshooting
 ├── CHANGELOG.md                 # Version history and changes
 └── DOCUMENTATION_INDEX.md       # This file - documentation navigation
@@ -200,9 +202,9 @@ For technical questions:
 ## 📊 Documentation Metrics
 
 ### Current Status
-- **Total Documents**: 11
+- **Total Documents**: 12
 - **Coverage Areas**: 100% of major features
-- **Last Updated**: November 2024
+- **Last Updated**: January 2026
 
 ### Quality Metrics
 - **Technical Accuracy**: Verified against codebase
@@ -219,6 +221,7 @@ For technical questions:
 3. **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Most comprehensive
 
 ### Recent Updates
+- **January 2026**: Added Payment Gateway Factory Pattern documentation
 - **November 2024**: Updated all documentation to match current codebase
 - **November 2024**: Added comprehensive deployment configuration guide
 - **November 2024**: Updated API documentation with all current endpoints

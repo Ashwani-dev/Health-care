@@ -166,6 +166,13 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 		
+		<!-- Jackson JSR310 - Java 8 Date/Time support for Jackson -->
+		<!-- Used for: Serializing/deserializing LocalDate, LocalDateTime, etc. -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+
 		<!-- ============================================ -->
 		<!-- Third-Party Service Integrations -->
 		<!-- ============================================ -->

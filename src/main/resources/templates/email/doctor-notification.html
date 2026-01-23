@@ -340,93 +340,93 @@
   </style>
 </head>
 <body>
-  <div class="email-container">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-icon">📅</div>
-      <h1>New Patient Appointment</h1>
-      <p>You have a new session scheduled</p>
-      <div class="priority-badge">Action Required</div>
+<div class="email-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">📅</div>
+    <h1>New Patient Appointment</h1>
+    <p>You have a new session scheduled</p>
+    <div class="priority-badge">Action Required</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <p class="greeting">Dear <span class="greeting-name">Dr. <span th:text="${doctorName}">Smith</span></span>,</p>
+
+    <div class="alert-box">
+      <p>A new patient has booked an appointment with you. Please review the details below.</p>
     </div>
 
-    <!-- Content -->
-    <div class="content">
-      <p class="greeting">Dear <span class="greeting-name">Dr. <span th:text="${doctorName}">Smith</span></span>,</p>
-
-      <div class="alert-box">
-        <p>A new patient has booked an appointment with you. Please review the details below.</p>
-      </div>
-
-      <!-- Patient Information Card -->
-      <div class="patient-card">
-        <div class="patient-card-header">
-          <div class="patient-avatar">👤</div>
-          <div class="patient-info">
-            <div class="patient-name" th:text="${patientName}">John Doe</div>
-            <div class="patient-label">New Patient</div>
-          </div>
-        </div>
-
-        <div class="appointment-card-title">Session Details</div>
-
-        <div class="detail-row">
-          <div class="detail-icon" style="background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);">📅</div>
-          <div class="detail-content">
-            <div class="detail-label">Appointment Date</div>
-            <div class="detail-value" th:text="${#temporals.format(date, 'EEEE, MMMM dd, yyyy')}">Monday, January 01, 2023</div>
-          </div>
-        </div>
-
-        <div class="detail-row">
-          <div class="detail-icon" style="background: linear-gradient(135deg, #ED8936 0%, #DD6B20 100%);">🕒</div>
-          <div class="detail-content">
-            <div class="detail-label">Session Time</div>
-            <div class="detail-value" th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</div>
-          </div>
-        </div>
-
-        <div class="detail-row">
-          <div class="detail-icon" style="background: linear-gradient(135deg, #9F7AEA 0%, #805AD5 100%);">📧</div>
-          <div class="detail-content">
-            <div class="detail-label">Patient Email</div>
-            <div class="detail-value" th:text="${patientEmail}">patient@example.com</div>
-          </div>
-        </div>
-
-        <!-- Patient Concern -->
-        <div class="description-box">
-          <div class="detail-label">💬 Patient's Primary Concern</div>
-          <div class="detail-value" th:text="${description}">Patient prefers to discuss during the session</div>
+    <!-- Patient Information Card -->
+    <div class="patient-card">
+      <div class="patient-card-header">
+        <div class="patient-avatar">👤</div>
+        <div class="patient-info">
+          <div class="patient-name" th:text="${patientName}">John Doe</div>
+          <div class="patient-label">New Patient</div>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="button-container">
-        <a th:href="${joinLink}" class="button button-primary">
-          🎥 Join Video Session
-        </a>
+      <div class="appointment-card-title">Session Details</div>
+
+      <div class="detail-row">
+        <div class="detail-icon" style="background: linear-gradient(135deg, #4299E1 0%, #3182CE 100%);">📅</div>
+        <div class="detail-content">
+          <div class="detail-label">Appointment Date</div>
+          <div class="detail-value" th:text="${#temporals.format(date, 'EEEE, MMMM dd, yyyy')}">Monday, January 01, 2023</div>
+        </div>
       </div>
 
-      <div class="divider"></div>
+      <div class="detail-row">
+        <div class="detail-icon" style="background: linear-gradient(135deg, #ED8936 0%, #DD6B20 100%);">🕒</div>
+        <div class="detail-content">
+          <div class="detail-label">Session Time</div>
+          <div class="detail-value" th:text="${#temporals.format(time, 'hh:mm a')}">10:00 AM</div>
+        </div>
+      </div>
 
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <h3>📝 Preparation Tips</h3>
-        <p>This appointment has been automatically added to your calendar. Please review any patient notes and ensure you're prepared 10 minutes before the scheduled time.</p>
+      <div class="detail-row">
+        <div class="detail-icon" style="background: linear-gradient(135deg, #9F7AEA 0%, #805AD5 100%);">📧</div>
+        <div class="detail-content">
+          <div class="detail-label">Patient Email</div>
+          <div class="detail-value" th:text="${patientEmail}">patient@example.com</div>
+        </div>
+      </div>
+
+      <!-- Patient Concern -->
+      <div class="description-box">
+        <div class="detail-label">💬 Patient's Primary Concern</div>
+        <div class="detail-value" th:text="${description}">Patient prefers to discuss during the session</div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      <div class="footer-brand">Thera-connect</div>
-      <p class="footer-text">Professional Mental Wellness Platform</p>
-      <p class="footer-text">Supporting therapists in delivering quality care</p>
-      <div class="footer-links">
-        <a href="#" class="footer-link">Dashboard</a>
-        <a href="#" class="footer-link">Support</a>
-        <a href="#" class="footer-link">Resources</a>
-      </div>
+    <!-- Action Buttons -->
+    <div class="button-container">
+      <a th:href="${joinLink}" class="button button-primary">
+        🎥 Join Video Session
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3>📝 Preparation Tips</h3>
+      <p>This appointment has been automatically added to your calendar. Please review any patient notes and ensure you're prepared 10 minutes before the scheduled time.</p>
     </div>
   </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-brand">Thera-connect</div>
+    <p class="footer-text">Professional Mental Wellness Platform</p>
+    <p class="footer-text">Supporting therapists in delivering quality care</p>
+    <div class="footer-links">
+      <a href="#" class="footer-link">Dashboard</a>
+      <a href="#" class="footer-link">Support</a>
+      <a href="#" class="footer-link">Resources</a>
+    </div>
+  </div>
+</div>
 </body>
 </html>

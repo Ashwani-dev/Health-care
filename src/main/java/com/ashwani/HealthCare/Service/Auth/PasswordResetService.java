@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Auth;
 
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetDTO;
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetRequestDTO;
@@ -8,6 +8,7 @@ import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PasswordResetTokenRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
+import com.ashwani.HealthCare.Service.Communication.EmailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

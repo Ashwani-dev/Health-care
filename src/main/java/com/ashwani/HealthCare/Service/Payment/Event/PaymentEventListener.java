@@ -1,9 +1,10 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Payment.Event;
 
 import com.ashwani.HealthCare.DTO.Payment.PaymentCompletedEvent;
 import com.ashwani.HealthCare.Entity.AppointmentEntity;
 import com.ashwani.HealthCare.Entity.AppointmentHold;
 import com.ashwani.HealthCare.Repository.AppointmentHoldRepository;
+import com.ashwani.HealthCare.Service.Appointment.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Queue;

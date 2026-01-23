@@ -5,7 +5,7 @@ import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
 import com.ashwani.HealthCare.Entity.PatientEntity;
 import com.ashwani.HealthCare.Repository.PatientRepository;
-import com.ashwani.HealthCare.Service.PatientService;
+import com.ashwani.HealthCare.Service.Patient.PatientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;

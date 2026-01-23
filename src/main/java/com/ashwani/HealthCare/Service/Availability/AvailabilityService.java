@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Availability;
 
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;

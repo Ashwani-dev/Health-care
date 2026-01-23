@@ -4,7 +4,7 @@ import com.ashwani.HealthCare.DTO.Payment.PaymentRequest;
 import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
 import com.ashwani.HealthCare.Entity.PaymentEntity;
-import com.ashwani.HealthCare.Service.PaymentService;
+import com.ashwani.HealthCare.Service.Payment.PaymentService;
 import com.cashfree.pg.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +45,10 @@ public class PaymentController {
      * @param signature Optional header x-webhook-signature for validation
      * @return 200 OK on success
      */
-    public ResponseEntity<?> paymentWebhook(@RequestBody String rawBody,
+    public ResponseEntity<?> cashfreeWebhook(@RequestBody String rawBody,
                                             @RequestHeader(value = "x-webhook-signature", required = false) String signature) {
         try {
+            log.info("Received Cashfree webhook");
             // Parse the JSON payload
             ObjectMapper objectMapper = new ObjectMapper();
             PaymentWebhookPayload payload = objectMapper.readValue(rawBody, PaymentWebhookPayload.class);
@@ -55,7 +56,30 @@ public class PaymentController {
             paymentService.handleWebhook(payload, signature, rawBody);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.error("Error processing webhook", e);
+            log.error("Error processing Cashfree webhook", e);
+            return ResponseEntity.status(500).body("Error processing webhook: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/webhook/paytm")
+    /**
+     * Handle incoming Paytm webhook callbacks
+     * @param rawBody Raw JSON payload from Paytm
+     * @param checksumHeader Optional CHECKSUMHASH header for validation
+     * @return 200 OK on success
+     */
+    public ResponseEntity<?> paytmWebhook(@RequestBody String rawBody,
+                                          @RequestHeader(value = "CHECKSUMHASH", required = false) String checksumHeader) {
+        try {
+            log.info("Received Paytm webhook");
+            // Parse the JSON payload
+            ObjectMapper objectMapper = new ObjectMapper();
+            PaymentWebhookPayload payload = objectMapper.readValue(rawBody, PaymentWebhookPayload.class);
+
+            paymentService.handleWebhook(payload, checksumHeader, rawBody);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error processing Paytm webhook", e);
             return ResponseEntity.status(500).body("Error processing webhook: " + e.getMessage());
         }
     }

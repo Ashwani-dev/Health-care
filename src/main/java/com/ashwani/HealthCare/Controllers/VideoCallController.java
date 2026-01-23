@@ -2,7 +2,7 @@ package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.VideoSession.VideoSession;
 import com.ashwani.HealthCare.Entity.TwilioWebhookEventEntity;
-import com.ashwani.HealthCare.Service.VideoCallService;
+import com.ashwani.HealthCare.Service.Communication.VideoCallService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,8 +1,9 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Appointment;
 
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.*;
 import com.ashwani.HealthCare.Repository.*;
+import com.ashwani.HealthCare.Service.Communication.EmailService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import com.ashwani.HealthCare.specifications.AppointmentSpecifications;
 import lombok.RequiredArgsConstructor;

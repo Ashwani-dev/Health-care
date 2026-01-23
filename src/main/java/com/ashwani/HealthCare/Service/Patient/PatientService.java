@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Patient;
 
 import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;

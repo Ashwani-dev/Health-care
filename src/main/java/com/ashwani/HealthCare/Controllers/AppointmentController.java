@@ -3,7 +3,7 @@ package com.ashwani.HealthCare.Controllers;
 import com.ashwani.HealthCare.DTO.Appointments.BookAppointmentRequest;
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
 import com.ashwani.HealthCare.DTO.Appointments.UpdateAppointmentRequest;
-import com.ashwani.HealthCare.Service.AppointmentService;
+import com.ashwani.HealthCare.Service.Appointment.AppointmentService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Auth;
 
 import com.ashwani.HealthCare.DTO.Authentication.AuthResponse;
 import com.ashwani.HealthCare.Entity.DoctorEntity;

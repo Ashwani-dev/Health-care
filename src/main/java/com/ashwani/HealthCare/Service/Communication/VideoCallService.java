@@ -1,4 +1,4 @@
-package com.ashwani.HealthCare.Service;
+package com.ashwani.HealthCare.Service.Communication;
 
 import com.ashwani.HealthCare.Config.TwilioConfig;
 import com.ashwani.HealthCare.DTO.VideoSession.VideoSession;
