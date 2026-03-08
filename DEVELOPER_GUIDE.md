@@ -681,7 +681,7 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     List<AppointmentEntity> findByDoctorIdAndAppointmentDate(Long doctorId, LocalDate date);
     
     // Safe - uses @Query with parameters
-    @Query("SELECT a FROM AppointmentEntity a WHERE a.doctorId = :doctorId AND a.status = :status")
+    @Query("SELECT a FROM Appointment a WHERE a.doctorId = :doctorId AND a.status = :status")
     List<AppointmentEntity> findByDoctorIdAndStatus(@Param("doctorId") Long doctorId, 
                                                    @Param("status") AppointmentStatus status);
 }

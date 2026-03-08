@@ -1,6 +1,6 @@
 package com.ashwani.HealthCare.Repository;
 
-import com.ashwani.HealthCare.Entity.PasswordResetTokenEntity;
+import com.ashwani.HealthCare.Entity.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,17 +11,17 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
-public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetTokenEntity, Long> {
-    Optional<PasswordResetTokenEntity> findByToken(String token);
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
+    Optional<PasswordResetToken> findByToken(String token);
 
-    Optional<PasswordResetTokenEntity> findByEmailAndUserType(String email, String userType);
+    Optional<PasswordResetToken> findByEmailAndUserType(String email, String userType);
 
     @Modifying
-    @Query("DELETE FROM PasswordResetTokenEntity p WHERE p.expiryDate < :now")
+    @Query("DELETE FROM PasswordResetToken p WHERE p.expiryDate < :now")
     void deleteExpiredTokens(@Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("DELETE FROM PasswordResetTokenEntity p WHERE p.email = :email AND p.userType = :userType")
+    @Query("DELETE FROM PasswordResetToken p WHERE p.email = :email AND p.userType = :userType")
     void deleteByEmailAndUserType(@Param("email") String email, @Param("userType") String userType);
 }
 

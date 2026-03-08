@@ -2,9 +2,13 @@ package com.ashwani.HealthCare.Service.Auth;
 
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetDTO;
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetRequestDTO;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.PasswordResetTokenEntity;
-import com.ashwani.HealthCare.Entity.PatientEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
+import com.ashwani.HealthCare.Entity.PasswordResetToken;
+import com.ashwani.HealthCare.Entity.Patient;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
+import com.ashwani.HealthCare.ExceptionHandlers.token.InvalidTokenException;
+import com.ashwani.HealthCare.ExceptionHandlers.token.TokenAlreadyUsedException;
+import com.ashwani.HealthCare.ExceptionHandlers.token.TokenExpiredException;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Repository.PasswordResetTokenRepository;
 import com.ashwani.HealthCare.Repository.PatientRepository;
@@ -44,8 +48,8 @@ public class PasswordResetService {
         String email = request.getEmail();
 
         // Check if patient exists
-        PatientEntity patient = patientRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("No account found with this email address"));
+        Patient patient = patientRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient", email));
 
         // Delete any existing tokens for this patient
         tokenRepository.deleteByEmailAndUserType(email, "PATIENT");
@@ -55,7 +59,7 @@ public class PasswordResetService {
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
 
         // Save token
-        PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity(token, email, "PATIENT", expiryDate);
+        PasswordResetToken resetToken = new PasswordResetToken(token, email, "PATIENT", expiryDate);
         tokenRepository.save(resetToken);
 
         // Send email
@@ -75,8 +79,8 @@ public class PasswordResetService {
         String email = request.getEmail();
 
         // Check if doctor exists
-        DoctorEntity doctor = doctorRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("No account found with this email address"));
+        Doctor doctor = doctorRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", email));
 
         // Delete any existing tokens for this doctor
         tokenRepository.deleteByEmailAndUserType(email, "DOCTOR");
@@ -86,7 +90,7 @@ public class PasswordResetService {
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(tokenExpiryMinutes);
 
         // Save token
-        PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity(token, email, "DOCTOR", expiryDate);
+        PasswordResetToken resetToken = new PasswordResetToken(token, email, "DOCTOR", expiryDate);
         tokenRepository.save(resetToken);
 
         // Send email
@@ -107,35 +111,35 @@ public class PasswordResetService {
         String newPassword = resetDTO.getNewPassword();
 
         // Find token
-        PasswordResetTokenEntity resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+        PasswordResetToken resetToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token", "PASSWORD_RESET"));
 
         // Validate token
         if (resetToken.isUsed()) {
-            throw new RuntimeException("This reset token has already been used");
+            throw new TokenAlreadyUsedException("This reset token has already been used", "PASSWORD_RESET");
         }
 
         if (resetToken.isExpired()) {
-            throw new RuntimeException("This reset token has expired. Please request a new one");
+            throw new TokenExpiredException("This reset token has expired. Please request a new one", "PASSWORD_RESET");
         }
 
         // Update password based on user type
         if ("PATIENT".equals(resetToken.getUserType())) {
-            PatientEntity patient = patientRepository.findByEmail(resetToken.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            Patient patient = patientRepository.findByEmail(resetToken.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient", resetToken.getEmail()));
 
             patient.setPassword(passwordEncoder.encode(newPassword));
             patientRepository.save(patient);
             log.info("✅ Password reset successful for patient: {}", resetToken.getEmail());
         } else if ("DOCTOR".equals(resetToken.getUserType())) {
-            DoctorEntity doctor = doctorRepository.findByEmail(resetToken.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Doctor not found"));
+            Doctor doctor = doctorRepository.findByEmail(resetToken.getEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor", resetToken.getEmail()));
 
             doctor.setPassword(passwordEncoder.encode(newPassword));
             doctorRepository.save(doctor);
             log.info("✅ Password reset successful for doctor: {}", resetToken.getEmail());
         } else {
-            throw new RuntimeException("Invalid user type");
+            throw new IllegalArgumentException("Invalid user type: " + resetToken.getUserType());
         }
 
         // Mark token as used

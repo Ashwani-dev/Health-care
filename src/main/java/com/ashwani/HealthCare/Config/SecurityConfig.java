@@ -50,6 +50,8 @@ public class SecurityConfig {
                                 "/api/auth/doctor/login",
                                 "/api/auth/doctor/forgot-password",
                                 "/api/auth/reset-password",
+                                "/api/auth/login/password",
+                                "/api/auth/login/totp",
                                 "/api/video-call/webhook",
                                 "/api/payments/webhook/**"
                         ).permitAll()

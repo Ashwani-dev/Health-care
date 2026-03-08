@@ -18,14 +18,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class VideoCallSessionsEntity {
+public class VideoCallSessions {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appointment_id", nullable = false)
-    private AppointmentEntity appointment;
+    private Appointment appointment;
 
     @Column(name = "twilio_room_sid", unique = true)
     private String twilioRoomSid;

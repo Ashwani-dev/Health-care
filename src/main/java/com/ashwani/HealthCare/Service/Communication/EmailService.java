@@ -1,7 +1,8 @@
 package com.ashwani.HealthCare.Service.Communication;
 
-import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.PatientEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
+import com.ashwani.HealthCare.Entity.Patient;
+import com.ashwani.HealthCare.ExceptionHandlers.communication.EmailSendingException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class EmailService {
         return frontendUrl + "video-preview/" + appointmentId + "/DOCTOR";
     }
 
-    private void sendPatientEmail(DoctorEntity doctor, PatientEntity patient,
+    private void sendPatientEmail(Doctor doctor, Patient patient,
                                   LocalTime time, LocalDate date, String patientJoinLink) {
         try {
             Context context = new Context();
@@ -52,11 +53,11 @@ public class EmailService {
             sendEmail(patient.getEmail(), "Appointment Confirmation", htmlContent);
         } catch (MessagingException e) {
             log.error("❌ Failed to send patient email to: {}", patient.getEmail(), e);
-            throw new RuntimeException("Failed to send patient email", e);
+            throw new EmailSendingException("Failed to send appointment confirmation to patient", patient.getEmail(), e);
         }
     }
 
-    private void sendDoctorEmail(DoctorEntity doctor, PatientEntity patient,
+    private void sendDoctorEmail(Doctor doctor, Patient patient,
                                  LocalTime time, LocalDate date, String description, String doctorJoinLink) {
         try {
             Context context = new Context();
@@ -72,7 +73,7 @@ public class EmailService {
             sendEmail(doctor.getEmail(), "New Appointment Scheduled", htmlContent);
         } catch (MessagingException e) {
             log.error("❌ Failed to send patient email to: {}", doctor.getEmail(), e);
-            throw new RuntimeException("Failed to send patient email", e);
+            throw new EmailSendingException("Failed to send appointment notification to doctor", doctor.getEmail(), e);
         }
     }
 
@@ -93,7 +94,7 @@ public class EmailService {
         mailSender.send(message);
     }
     @Async
-    public void sendAppointmentConfirmation(DoctorEntity doctor, PatientEntity patient, Long appointmentId, LocalTime appointmentTime, LocalDate date, String description){
+    public void sendAppointmentConfirmation(Doctor doctor, Patient patient, Long appointmentId, LocalTime appointmentTime, LocalDate date, String description){
         String doctorEmail = doctor.getEmail();
         String patientEmail = patient.getEmail();
         log.info("📧 Sending appointment confirmation to: {} and {}", doctorEmail, patientEmail);
@@ -130,7 +131,7 @@ public class EmailService {
             log.info("✅ SUCCESS: Password reset email sent to: {}", email);
         } catch (Exception e) {
             log.error("❌ FAILURE: Password reset email failed for: {}", email, e);
-            throw new RuntimeException("Failed to send password reset email", e);
+            throw new EmailSendingException("Failed to send password reset email", email, e);
         }
     }
 }

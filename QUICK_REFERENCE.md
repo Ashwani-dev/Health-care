@@ -114,6 +114,13 @@ POST   /api/auth/doctor/register          - Register doctor
 POST   /api/auth/doctor/login             - Login doctor
 POST   /api/auth/doctor/forgot-password   - Request doctor password reset
 POST   /api/auth/reset-password           - Reset password with token
+
+# TOTP (Authenticator App) Authentication
+POST   /api/auth/login/password           - Login with password (universal, requires ?userType=PATIENT|DOCTOR)
+POST   /api/auth/login/totp               - Login with TOTP code (universal, requires ?userType=PATIENT|DOCTOR)
+POST   /api/auth/totp/setup               - Setup TOTP (protected, returns QR code)
+POST   /api/auth/totp/confirm             - Confirm TOTP setup (protected)
+POST   /api/auth/totp/disable             - Disable TOTP (protected)
 ```
 
 ### Appointments
@@ -271,7 +278,7 @@ spring.mail.port=587
 spring.mail.username=${EMAIL_ID}
 spring.mail.password=${EMAIL_PASSWORD}
 
-# PaymentEntity
+# Payment
 cashfree.env=SANDBOX
 cashfree.appId=${APP_ID}
 cashfree.secretKey=${SECRET_KEY}

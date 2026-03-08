@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class PasswordResetTokenEntity {
+public class PasswordResetToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,7 +44,7 @@ public class PasswordResetTokenEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public PasswordResetTokenEntity(String token, String email, String userType, LocalDateTime expiryDate) {
+    public PasswordResetToken(String token, String email, String userType, LocalDateTime expiryDate) {
         this.token = token;
         this.email = email;
         this.userType = userType;

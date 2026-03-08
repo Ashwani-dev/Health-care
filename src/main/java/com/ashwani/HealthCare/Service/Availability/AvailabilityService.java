@@ -3,7 +3,8 @@ package com.ashwani.HealthCare.Service.Availability;
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;
 import com.ashwani.HealthCare.Entity.DoctorAvailability;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
 import com.ashwani.HealthCare.Repository.DoctorAvailabilityRepository;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,8 +34,8 @@ public class AvailabilityService {
     }
 
     public List<AvailabilityResponseDto> setAvailability(Long doctorId, List<AvailabilityRequestDto> requests){
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         return requests.stream()
                 .map(request -> {
@@ -48,13 +49,13 @@ public class AvailabilityService {
 
     @Transactional
     public void deleteAvailabilitySlot(Long doctorId, Long slotId) {
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         boolean slotExists = availabilityRepository.existsById(slotId);
 
         if (!slotExists) {
-            throw new RuntimeException("Availability slot not found or does not belong to this doctor");
+            throw new ResourceNotFoundException("Availability slot", slotId);
         }
 
         availabilityRepository.deleteByDoctorAndId(doctor, slotId);

@@ -3,7 +3,7 @@ package com.ashwani.HealthCare.Controllers;
 import com.ashwani.HealthCare.DTO.Payment.PaymentRequest;
 import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
-import com.ashwani.HealthCare.Entity.PaymentEntity;
+import com.ashwani.HealthCare.Entity.Payment;
 import com.ashwani.HealthCare.Service.Payment.PaymentService;
 import com.cashfree.pg.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +34,7 @@ public class PaymentController {
      * @param request Payment initiation payload (customer + amount)
      * @return PaymentResponse with orderId and paymentSessionId
      */
-    public ResponseEntity<PaymentResponse> initiatePayment(@RequestBody PaymentRequest request) throws ApiException {
+    public ResponseEntity<PaymentResponse> initiatePayment(@RequestBody PaymentRequest request) {
         return ResponseEntity.ok(paymentService.initiatePayment(request));
     }
 
@@ -90,7 +90,7 @@ public class PaymentController {
      * @param orderId Cashfree order ID
      * @return Human readable status string
      */
-    public ResponseEntity<String> getPaymentStatus(@PathVariable String orderId) throws ApiException {
+    public ResponseEntity<String> getPaymentStatus(@PathVariable String orderId) {
         String status = paymentService.getPaymentStatus(orderId);
         return ResponseEntity.status(200).body("Your payment status is " + status);
     }
@@ -133,20 +133,20 @@ public class PaymentController {
      * @param id Patient ID (path variable)
      * @param minAmount Minimum amount filter (optional)
      * @param maxAmount Maximum amount filter (optional)
-     * @return Page of PaymentEntity objects
+     * @return Page of Payment objects
      */
     @GetMapping("/payment-details/{id}")
-    public ResponseEntity<PagedModel<EntityModel<PaymentEntity>>> getPayments(
+    public ResponseEntity<PagedModel<EntityModel<Payment>>> getPayments(
             @PathVariable("id") Long id,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String paymentMode,
             @RequestParam(required = false) BigDecimal minAmount,
             @RequestParam(required = false) BigDecimal maxAmount,
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
-            PagedResourcesAssembler<PaymentEntity> assembler) {
+            PagedResourcesAssembler<Payment> assembler) {
 
         try {
-            Page<PaymentEntity> payments = paymentService.getPaginatedPayments(
+            Page<Payment> payments = paymentService.getPaginatedPayments(
                     status, paymentMode, id, minAmount, maxAmount, pageable);
 
             return ResponseEntity.ok(assembler.toModel(payments));

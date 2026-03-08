@@ -5,7 +5,7 @@ import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
 import com.ashwani.HealthCare.Enums.Gender;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.Service.Doctor.DoctorService;
@@ -38,7 +38,7 @@ public class DoctorController {
     public ResponseEntity<DoctorProfile> getDoctorProfile(Principal principal) {
         // Fetch doctor details from database
         long userId = Long.parseLong(principal.getName());
-        DoctorEntity doctor = doctorRepository.findById(userId)
+        Doctor doctor = doctorRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
         // Convert to DTO

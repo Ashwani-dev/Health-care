@@ -154,7 +154,15 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-web</artifactId>
 		</dependency>
-		
+
+		<!-- TOTP/MFA Library - for Time-based One-Time Password authentication -->
+		<!-- Used for: Generating TOTP secrets, QR codes, and verifying authenticator codes -->
+		<dependency>
+			<groupId>dev.samstevens.totp</groupId>
+			<artifactId>totp-spring-boot-starter</artifactId>
+			<version>1.7.1</version>
+		</dependency>
+
 		<!-- ============================================ -->
 		<!-- JSON Processing -->
 		<!-- ============================================ -->

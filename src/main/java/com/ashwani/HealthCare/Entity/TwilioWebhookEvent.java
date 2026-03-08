@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class TwilioWebhookEventEntity {
+public class TwilioWebhookEvent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

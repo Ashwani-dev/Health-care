@@ -1,8 +1,11 @@
 package com.ashwani.HealthCare.Entity;
 
-import com.ashwani.HealthCare.Enums.Gender;
+import com.ashwani.HealthCare.Enums.LoginMethod;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -12,11 +15,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "doctors")
+@Table(name = "patients")
 @Setter
 @Getter
 @EntityListeners(AuditingEntityListener.class)
-public class DoctorEntity {
+public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -47,23 +50,19 @@ public class DoctorEntity {
     private String contact_number;
 
     @Column(nullable = false)
-    @NotNull(message = "Experience is required")
-    private int medical_experience;
+    @NotBlank(message = "Address is required")
+    private String address;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Area of specialization is required")
-    private String specialization;
+    // TOTP/MFA fields
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Column(name = "totp_enabled", nullable = false)
+    private boolean totpEnabled = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @NotNull(message = "Gender is required")
-    private Gender gender;
-
-    @Column(name = "license_number", nullable = false, unique = true, length = 50)
-    @NotBlank(message = "License number is required")
-    @Size(min = 5, max = 50, message = "License number must be between 5 and 50 characters")
-    @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "License number must be alphanumeric with optional hyphens")
-    private String license_number;
+    @Column(name = "login_method", nullable = false, length = 20)
+    private LoginMethod loginMethod = LoginMethod.PASSWORD;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

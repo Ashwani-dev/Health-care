@@ -16,7 +16,8 @@ A comprehensive Spring Boot application for managing healthcare appointments, do
 ### Technical Features
 - **RESTful API**: Comprehensive REST API with HATEOAS support
 - **Database**: PostgreSQL with JPA/Hibernate
-- **Security**: Spring Security with JWT tokens
+- **Security**: Spring Security with JWT tokens and TOTP/MFA support
+- **Two-Factor Authentication**: Time-based One-Time Password (TOTP) with QR code generation
 - **Pagination**: Efficient data pagination for large datasets
 - **Validation**: Input validation and error handling
 - **Logging**: Comprehensive application logging
@@ -157,13 +158,43 @@ The application supports three profiles:
 
 For detailed configuration, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
+## 🔐 Multi-Factor Authentication (TOTP/2FA)
+
+The system supports **Time-based One-Time Password (TOTP)** authentication using authenticator apps like Google Authenticator, Microsoft Authenticator, or Authy.
+
+### Features
+- **Flexible Login**: Users can login with password or TOTP (or both)
+- **QR Code Setup**: Easy setup by scanning QR code with authenticator app
+- **Industry Standard**: Uses RFC 6238 compliant TOTP algorithm
+- **Enhanced Security**: 6-digit codes that change every 30 seconds
+- **User Choice**: Users can enable/disable TOTP at any time
+
+### Quick Setup Flow
+1. User logs in with password → gets JWT token
+2. Call `POST /api/auth/totp/setup` → receive QR code
+3. Scan QR code with authenticator app (Google Authenticator, etc.)
+4. Call `POST /api/auth/totp/confirm` with code from app → TOTP enabled
+5. User can now login with `POST /api/auth/login/totp` using email + TOTP code
+
+### Login Methods
+- **PASSWORD**: Traditional email + password login (default for new users)
+- **BOTH**: Users with TOTP enabled can login with either password OR TOTP code
+- **TOTP**: Force TOTP-only login (optional, for high-security requirements)
+
+For complete TOTP documentation, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#-totp-authenticator-app-authentication).
+
 ## 📚 API Documentation
 
 ### Authentication Endpoints
 - `POST /api/auth/patient/register` - Register a new patient
-- `POST /api/auth/patient/login` - Patient login
+- `POST /api/auth/patient/login` - Patient login (traditional)
 - `POST /api/auth/doctor/register` - Register a new doctor
-- `POST /api/auth/doctor/login` - Doctor login
+- `POST /api/auth/doctor/login` - Doctor login (traditional)
+- `POST /api/auth/login/password?userType=PATIENT|DOCTOR` - Universal password login
+- `POST /api/auth/login/totp?userType=PATIENT|DOCTOR` - Login with TOTP/2FA code
+- `POST /api/auth/totp/setup` - Setup TOTP/2FA (requires authentication)
+- `POST /api/auth/totp/confirm` - Confirm TOTP setup with verification code
+- `POST /api/auth/totp/disable` - Disable TOTP/2FA (requires authentication)
 
 ### Appointment Endpoints
 - `POST /api/appointments/book` - Book a new appointment

@@ -4,19 +4,19 @@ import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
 import com.ashwani.HealthCare.Enums.Gender;
+import com.ashwani.HealthCare.ExceptionHandlers.common.DuplicateResourceException;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
 import com.ashwani.HealthCare.specifications.DoctorSpecifications;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,16 +28,16 @@ public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final ModelMapper modelMapper;
 
-    private DoctorDto convertToDto(DoctorEntity doctor) {
+    private DoctorDto convertToDto(Doctor doctor) {
         return modelMapper.map(doctor, DoctorDto.class);
     }
 
-    private Specification<DoctorEntity> buildSearchSpecification(String query) {
+    private Specification<Doctor> buildSearchSpecification(String query) {
         return Specification.where(DoctorSpecifications.hasSpecialization(query))
                 .or(DoctorSpecifications.nameContains(query));
     }
 
-    private Specification<DoctorEntity> buildFilterSpecification(String specialization, Gender gender) {
+    private Specification<Doctor> buildFilterSpecification(String specialization, Gender gender) {
         return Specification.where(DoctorSpecifications.hasSpecialization(specialization))
                 .and(DoctorSpecifications.hasGender(gender));
     }
@@ -46,7 +46,7 @@ public class DoctorService {
     public List<DoctorDto> searchDoctors(@Nullable String searchQuery,
                                          @Nullable String specialization,
                                          @Nullable Gender gender){
-        Specification<DoctorEntity> spec;
+        Specification<Doctor> spec;
         if(searchQuery != null){
             spec = buildSearchSpecification(searchQuery);
         }
@@ -61,11 +61,9 @@ public class DoctorService {
     }
 
     public DoctorProfile updateDoctorProfile(Long doctorId, @Valid DoctorProfileUpdateRequest updateRequest) {
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Doctor not found with ID: " + doctorId
-                ));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
+
         // Handle license number validation only if it's being provided in the update
         if (updateRequest.license_number() != null && !updateRequest.license_number().trim().isEmpty()) {
             // Check if license number is being changed and if it's unique
@@ -75,10 +73,7 @@ public class DoctorService {
                 doctorRepository.findByLicenseNumber(updateRequest.license_number())
                         .ifPresent(existingDoctor -> {
                             if (!existingDoctor.getId().equals(doctorId)) {
-                                throw new ResponseStatusException(
-                                        HttpStatus.BAD_REQUEST,
-                                        "License number already exists"
-                                );
+                                throw new DuplicateResourceException("Doctor", "license_number");
                             }
                         });
             }
@@ -89,17 +84,14 @@ public class DoctorService {
         doctor.setMedical_experience(updateRequest.medical_experience());
         doctor.setLicense_number(updateRequest.license_number());
 
-        DoctorEntity updatedDoctor = doctorRepository.save(doctor);
+        Doctor updatedDoctor = doctorRepository.save(doctor);
         return modelMapper.map(updatedDoctor, DoctorProfile.class);
     }
 
     @Transactional(readOnly = true)
     public DoctorProfileById getDoctorProfileById(Long doctorId) {
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Doctor not found with ID: " + doctorId
-                ));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         return new DoctorProfileById(
                 doctor.getEmail(),

@@ -16,18 +16,18 @@ import java.time.LocalTime;
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)
-public class AppointmentEntity {
+public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "patient_id", nullable = false)
-    private PatientEntity patient;
+    private Patient patient;
 
     @ManyToOne
     @JoinColumn(name = "doctor_id", nullable = false)
-    private DoctorEntity doctor;
+    private Doctor doctor;
 
     @Column(nullable = false)
     private LocalDate appointmentDate;
@@ -43,7 +43,7 @@ public class AppointmentEntity {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "payment_id", unique = true)
-    private PaymentEntity paymentDetails;
+    private Payment paymentDetails;
 
     private String description;
 

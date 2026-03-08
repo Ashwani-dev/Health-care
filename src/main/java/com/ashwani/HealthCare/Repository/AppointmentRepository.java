@@ -1,8 +1,8 @@
 package com.ashwani.HealthCare.Repository;
 
-import com.ashwani.HealthCare.Entity.AppointmentEntity;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
-import com.ashwani.HealthCare.Entity.PatientEntity;
+import com.ashwani.HealthCare.Entity.Appointment;
+import com.ashwani.HealthCare.Entity.Doctor;
+import com.ashwani.HealthCare.Entity.Patient;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -18,41 +18,41 @@ import java.util.Optional;
 
 
 public interface AppointmentRepository extends
-        JpaRepository<AppointmentEntity, Long>,
-        JpaSpecificationExecutor<AppointmentEntity> {
+        JpaRepository<Appointment, Long>,
+        JpaSpecificationExecutor<Appointment> {
 
-    @Query("SELECT a FROM AppointmentEntity a " +
+    @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.doctor " +
            "WHERE a.doctor = :doctor AND a.appointmentDate = :date")
-    List<AppointmentEntity> findByDoctorAndAppointmentDate(@Param("doctor") DoctorEntity doctor,
-                                                           @Param("date") LocalDate date);
+    List<Appointment> findByDoctorAndAppointmentDate(@Param("doctor") Doctor doctor,
+                                                     @Param("date") LocalDate date);
 
-    @Query("SELECT a FROM AppointmentEntity a " +
+    @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.doctor " +
            "JOIN FETCH a.patient " +
            "WHERE a.patient = :patient")
-    List<AppointmentEntity> findByPatient(@Param("patient") PatientEntity patient);
+    List<Appointment> findByPatient(@Param("patient") Patient patient);
 
-    @Query("SELECT a FROM AppointmentEntity a " +
+    @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient " +
            "JOIN FETCH a.doctor " +
            "WHERE a.doctor = :doctor")
-    List<AppointmentEntity> findByDoctor(@Param("doctor") DoctorEntity doctor);
+    List<Appointment> findByDoctor(@Param("doctor") Doctor doctor);
 
-    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM AppointmentEntity a " +
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Appointment a " +
            "WHERE a.doctor = :doctor AND a.appointmentDate = :date AND a.startTime = :startTime")
-    boolean existsByDoctorAndAppointmentDateAndStartTime(@Param("doctor") DoctorEntity doctor,
+    boolean existsByDoctorAndAppointmentDateAndStartTime(@Param("doctor") Doctor doctor,
                                                          @Param("date") LocalDate date,
                                                          @Param("startTime") LocalTime startTime);
 
-    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM AppointmentEntity a " +
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Appointment a " +
            "WHERE a.doctor = :doctor AND a.appointmentDate = :date AND a.startTime = :startTime AND a.id != :appointmentId")
-    boolean existsByDoctorAndAppointmentDateAndStartTimeAndIdNot(@Param("doctor") DoctorEntity doctor,
+    boolean existsByDoctorAndAppointmentDateAndStartTimeAndIdNot(@Param("doctor") Doctor doctor,
                                                                   @Param("date") LocalDate date,
                                                                   @Param("startTime") LocalTime startTime,
                                                                   @Param("appointmentId") Long appointmentId);
 
     @EntityGraph(attributePaths = {"patient", "doctor", "paymentDetails"})
     @NonNull
-    Optional<AppointmentEntity> findById(@NonNull Long id);
+    Optional<Appointment> findById(@NonNull Long id);
 }

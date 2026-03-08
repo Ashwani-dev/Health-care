@@ -2,14 +2,13 @@ package com.ashwani.HealthCare.Service.Patient;
 
 import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
-import com.ashwani.HealthCare.Entity.PatientEntity;
+import com.ashwani.HealthCare.Entity.Patient;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PatientService {
@@ -27,17 +26,14 @@ public class PatientService {
     }
 
     public PatientProfile updatePatientProfile(Long patientId, @Valid PatientProfileUpdateRequest updateRequest) {
-        PatientEntity patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Patient not found with ID: " + patientId
-                ));
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient", patientId));
 
         // Update only allowed fields
         patient.setFull_name(updateRequest.full_name());
         patient.setAddress(updateRequest.address());
 
-        PatientEntity updatedPatient = patientRepository.save(patient);
+        Patient updatedPatient = patientRepository.save(patient);
         return modelMapper.map(updatedPatient, PatientProfile.class);
     }
 }

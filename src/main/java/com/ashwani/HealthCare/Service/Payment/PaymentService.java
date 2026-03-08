@@ -5,12 +5,14 @@ import com.ashwani.HealthCare.DTO.Payment.PaymentCompletedEvent;
 import com.ashwani.HealthCare.DTO.Payment.PaymentRequest;
 import com.ashwani.HealthCare.DTO.Payment.PaymentResponse;
 import com.ashwani.HealthCare.DTO.Payment.PaymentWebhookPayload;
-import com.ashwani.HealthCare.Entity.PaymentEntity;
+import com.ashwani.HealthCare.Entity.Payment;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
+import com.ashwani.HealthCare.ExceptionHandlers.payment.PaymentException;
+import com.ashwani.HealthCare.ExceptionHandlers.payment.WebhookValidationException;
 import com.ashwani.HealthCare.Repository.PaymentRepository;
 import com.ashwani.HealthCare.Service.Payment.Gateway.PaymentGateway;
 import com.ashwani.HealthCare.Service.Payment.Factory.PaymentGatewayFactory;
 import com.cashfree.pg.ApiException;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -36,7 +38,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    public PaymentResponse initiatePayment(PaymentRequest paymentRequest) throws ApiException {
+    public PaymentResponse initiatePayment(PaymentRequest paymentRequest) {
         try {
             // Get the appropriate payment gateway
             PaymentGateway gateway = paymentGatewayFactory.getPaymentGateway();
@@ -50,7 +52,7 @@ public class PaymentService {
                     response.getOrderId(), gateway.getGatewayName());
 
             // Save payment entity
-            PaymentEntity payment = new PaymentEntity();
+            Payment payment = new Payment();
             payment.setOrderId(response.getOrderId());
             payment.setStatus("PENDING");
             payment.setPatientId(Long.parseLong(paymentRequest.getCustomerId()));
@@ -60,9 +62,12 @@ public class PaymentService {
 
             // Return order and session info to the controller/caller
             return response;
+        } catch (ApiException e) {
+            log.error("Payment gateway error while initiating payment", e);
+            throw new PaymentException("Payment gateway error: " + e.getMessage(), null, "GATEWAY_ERROR");
         } catch (Exception e) {
             log.error("Unexpected error while initiating payment", e);
-            throw e;
+            throw new PaymentException("Failed to initiate payment: " + e.getMessage());
         }
     }
 
@@ -71,8 +76,8 @@ public class PaymentService {
      * For now, reads from our DB which is updated by webhook. In future,
      * can be extended to call Cashfree's order/status API for real-time status.
      */
-    public String getPaymentStatus(String orderId) throws ApiException {
-        PaymentEntity payment = paymentRepository.findByOrderId(orderId);
+    public String getPaymentStatus(String orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId);
         if (payment == null) {
             return "PENDING";
         }
@@ -97,18 +102,17 @@ public class PaymentService {
             if (!gateway.validateWebhookSignature(payload, signature, rawBody)) {
                 log.error("Invalid webhook signature for order: {} using {} gateway",
                         payload.getOrderId(), gateway.getGatewayName());
-                // Note: You can choose to throw exception here if signature validation is critical
-                // throw new SecurityException("Invalid webhook signature");
+                throw new WebhookValidationException("Invalid webhook signature", payload.getOrderId());
             }
 
             log.info("Processing webhook for order: {} using {} gateway",
                     payload.getOrderId(), gateway.getGatewayName());
 
             // Find the payment/order record by orderId
-            PaymentEntity payment = paymentRepository.findByOrderId(payload.getOrderId());
+            Payment payment = paymentRepository.findByOrderId(payload.getOrderId());
             if (payment == null) {
                 log.error("Order not found in database: {}", payload.getOrderId());
-                throw new EntityNotFoundException("Order not found: " + payload.getOrderId());
+                throw new ResourceNotFoundException("Payment order", payload.getOrderId());
             }
 
             // Update payment status
@@ -168,7 +172,7 @@ public class PaymentService {
         }
     }
 
-    public List<PaymentEntity> getAllOrders() {
+    public List<Payment> getAllOrders() {
         return paymentRepository.findAll();
     }
 
@@ -180,10 +184,10 @@ public class PaymentService {
      * @param minAmount Minimum amount filter (optional)
      * @param maxAmount Maximum amount filter (optional)
      * @param pageable Pagination and sorting information
-     * @return Page of PaymentEntity objects
+     * @return Page of Payment objects
      */
     @Transactional(readOnly = true)
-    public Page<PaymentEntity> getPaginatedPayments(
+    public Page<Payment> getPaginatedPayments(
             String status,
             String paymentMode,
             Long patientId,
@@ -192,7 +196,7 @@ public class PaymentService {
             Pageable pageable) {
         
         // Build specification based on filters
-        Specification<PaymentEntity> spec = Specification.where(null);
+        Specification<Payment> spec = Specification.where(null);
         
         if (status != null && !status.isEmpty()) {
             spec = spec.and(PaymentSpecifications.hasStatus(status));

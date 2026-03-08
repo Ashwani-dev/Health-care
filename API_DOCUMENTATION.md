@@ -5,6 +5,20 @@
 http://localhost:8080/api
 ```
 
+## 📋 Table of Contents
+
+1. [Authentication](#-authentication-endpoints)
+   - [Traditional Authentication](#traditional-authentication)
+   - [TOTP/MFA (Two-Factor Authentication)](#totp-authenticator-app-authentication)
+   - [Password Reset](#password-reset)
+2. [Appointment Management](#-appointment-endpoints)
+3. [Doctor Management](#-doctor-endpoints)
+4. [Patient Management](#-patient-endpoints)
+5. [Availability Management](#-availability-endpoints)
+6. [Payment Processing](#-payment-endpoints)
+7. [Video Call/Telemedicine](#-video-call-endpoints)
+8. [Error Responses](#-error-responses)
+
 ## Authentication
 All protected endpoints require a valid JWT token in the Authorization header:
 ```
@@ -14,6 +28,8 @@ Authorization: Bearer <your-jwt-token>
 ---
 
 ## 🔐 Authentication Endpoints
+
+### Traditional Authentication
 
 ### Register Patient
 **POST** `/api/auth/patient/register`
@@ -185,6 +201,145 @@ Password has been reset successfully. You can now login with your new password
 - Tokens expire after 60 minutes (configurable via `password.reset.token.expiry.minutes` property)
 - Tokens are one-time use only
 - Password must be at least 6 characters long
+
+---
+
+## 🔒 TOTP (Authenticator App) Authentication
+
+### Login with Password (Universal)
+**POST** `/api/auth/login/password?userType=PATIENT|DOCTOR`
+
+Universal password login endpoint for both patients and doctors.
+
+**Query Parameters:**
+- `userType` - Either "PATIENT" or "DOCTOR"
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "role": "PATIENT",
+  "userId": 1,
+  "loginMethod": "PASSWORD"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` - LOGIN_METHOD_MISMATCH: "This account uses authenticator login. Please use TOTP code."
+- `401 Unauthorized` - Invalid credentials
+
+### Login with TOTP (Universal)
+**POST** `/api/auth/login/totp?userType=PATIENT|DOCTOR`
+
+Universal TOTP login endpoint for both patients and doctors using authenticator app codes.
+
+**Query Parameters:**
+- `userType` - Either "PATIENT" or "DOCTOR"
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "code": "123456"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "role": "DOCTOR",
+  "userId": 5,
+  "loginMethod": "TOTP"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` - TOTP_NOT_ENABLED: "TOTP is not enabled for this account"
+- `401 Unauthorized` - INVALID_TOTP_CODE: "Invalid TOTP code"
+
+### Setup TOTP
+**POST** `/api/auth/totp/setup`
+
+**Authentication Required:** Yes (JWT Bearer token)
+
+Generate a TOTP secret and QR code for the authenticated user. Scan the QR code with Google Authenticator, Microsoft Authenticator, or any TOTP-compatible app.
+
+**Response (200 OK):**
+```json
+{
+  "qrCodeImage": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+  "secret": "JBSWY3DPEHPK3PXP"
+}
+```
+
+**Response Fields:**
+- `qrCodeImage` - Base64-encoded PNG QR code (data URI format) - display this for users to scan
+- `secret` - Raw secret for manual entry if QR scanning fails
+
+**Error Responses:**
+- `409 Conflict` - TOTP_ALREADY_ENABLED: "TOTP is already enabled for this account"
+
+**Usage:**
+1. Display the QR code to the user
+2. User scans with authenticator app
+3. User calls `/api/auth/totp/confirm` with the code from app
+
+### Confirm TOTP Setup
+**POST** `/api/auth/totp/confirm`
+
+**Authentication Required:** Yes (JWT Bearer token)
+
+Verify the TOTP code and enable TOTP authentication for the user. After confirmation, the user's login method changes to TOTP and password login is disabled.
+
+**Request Body:**
+```json
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "code": "123456"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "TOTP enabled successfully",
+  "loginMethod": "TOTP"
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized` - INVALID_TOTP_CODE: "Invalid TOTP code"
+
+**Important:** After confirmation, user must use `/api/auth/login/totp` for future logins.
+
+### Disable TOTP
+**POST** `/api/auth/totp/disable`
+
+**Authentication Required:** Yes (JWT Bearer token)
+
+Disable TOTP authentication and revert to password-based login.
+
+**Response (200 OK):**
+```json
+{
+  "message": "TOTP disabled successfully",
+  "loginMethod": "PASSWORD"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request` - TOTP_NOT_ENABLED: "TOTP is not enabled for this account"
 
 ---
 

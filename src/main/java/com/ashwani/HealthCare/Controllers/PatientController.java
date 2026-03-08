@@ -3,7 +3,7 @@ package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
-import com.ashwani.HealthCare.Entity.PatientEntity;
+import com.ashwani.HealthCare.Entity.Patient;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Service.Patient.PatientService;
 import jakarta.validation.Valid;
@@ -32,7 +32,7 @@ public class PatientController {
     public ResponseEntity<PatientProfile> getPatientProfile(Principal principal) {
         // Fetch patient details from database
         Long userId = Long.parseLong(principal.getName());
-        PatientEntity patient = patientRepository.findById(userId)
+        Patient patient = patientRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         // Convert to DTO

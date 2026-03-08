@@ -109,6 +109,8 @@ HealthCare/
 
 ### Authentication & Security
 - **JWT Authentication**: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#-authentication-endpoints)
+- **TOTP/MFA (2FA)**: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#-totp-authenticator-app-authentication)
+- **Authenticator App Setup**: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#-totp-authenticator-app-authentication)
 - **Security Guidelines**: [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md#-security-guidelines)
 - **Security Checklist**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md#-security-checklist)
 

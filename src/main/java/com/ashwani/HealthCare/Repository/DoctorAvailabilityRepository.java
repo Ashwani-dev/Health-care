@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Repository;
 
 import com.ashwani.HealthCare.Entity.DoctorAvailability;
-import com.ashwani.HealthCare.Entity.DoctorEntity;
+import com.ashwani.HealthCare.Entity.Doctor;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +16,7 @@ public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvaila
     @Query("SELECT da FROM DoctorAvailability da " +
            "JOIN FETCH da.doctor " +
            "WHERE da.doctor = :doctor AND da.dayOfWeek = :dayOfWeek")
-    List<DoctorAvailability> findByDoctorAndDayOfWeek(@Param("doctor") DoctorEntity doctor,
+    List<DoctorAvailability> findByDoctorAndDayOfWeek(@Param("doctor") Doctor doctor,
                                                        @Param("dayOfWeek") DayOfWeek dayOfWeek);
 
     @Query("SELECT da FROM DoctorAvailability da " +
@@ -24,8 +24,8 @@ public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvaila
            "WHERE da.doctor.id = :id")
     List<DoctorAvailability> findByDoctorId(@Param("id") Long id);
 
-    void deleteByDoctorAndId(DoctorEntity doctor, Long id);
+    void deleteByDoctorAndId(Doctor doctor, Long id);
 
     @Transactional
-    void deleteByDoctor(DoctorEntity doctor);
+    void deleteByDoctor(Doctor doctor);
 }

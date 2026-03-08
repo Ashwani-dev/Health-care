@@ -24,7 +24,7 @@ public class DoctorAvailability {
 
     @ManyToOne
     @JoinColumn(name = "doctor_id", nullable = false)
-    private DoctorEntity doctor;
+    private Doctor doctor;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false)

@@ -1,12 +1,12 @@
 package com.ashwani.HealthCare.specifications;
 
-import com.ashwani.HealthCare.Entity.PaymentEntity;
+import com.ashwani.HealthCare.Entity.Payment;
 import org.springframework.data.jpa.domain.Specification;
 
 public class PaymentSpecifications {
 
     // Filter by payment status (null-safe, case-insensitive exact match)
-    public static Specification<PaymentEntity> hasStatus(String status) {
+    public static Specification<Payment> hasStatus(String status) {
         return (root, query, cb) ->
                 status == null || status.isEmpty()
                         ? cb.conjunction()
@@ -14,7 +14,7 @@ public class PaymentSpecifications {
     }
 
     // Filter by payment mode (null-safe, case-insensitive partial match)
-    public static Specification<PaymentEntity> hasPaymentMode(String paymentMode) {
+    public static Specification<Payment> hasPaymentMode(String paymentMode) {
         return (root, query, cb) ->
                 paymentMode == null || paymentMode.isEmpty()
                         ? cb.conjunction()
@@ -25,7 +25,7 @@ public class PaymentSpecifications {
     }
 
     // Filter by patient ID
-    public static Specification<PaymentEntity> hasPatientId(Long patientId) {
+    public static Specification<Payment> hasPatientId(Long patientId) {
         return (root, query, cb) ->
                 patientId == null
                         ? cb.conjunction()
@@ -33,7 +33,7 @@ public class PaymentSpecifications {
     }
 
     // Filter by order amount range
-    public static Specification<PaymentEntity> amountBetween(java.math.BigDecimal minAmount, java.math.BigDecimal maxAmount) {
+    public static Specification<Payment> amountBetween(java.math.BigDecimal minAmount, java.math.BigDecimal maxAmount) {
         return (root, query, cb) -> {
             if (minAmount == null && maxAmount == null) {
                 return cb.conjunction();

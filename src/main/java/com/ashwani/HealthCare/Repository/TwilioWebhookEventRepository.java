@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Repository;
 
-import com.ashwani.HealthCare.Entity.TwilioWebhookEventEntity;
+import com.ashwani.HealthCare.Entity.TwilioWebhookEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TwilioWebhookEventRepository extends JpaRepository <TwilioWebhookEventEntity, Long> {
+public interface TwilioWebhookEventRepository extends JpaRepository <TwilioWebhookEvent, Long> {
 }

@@ -1,7 +1,7 @@
 package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.VideoSession.VideoSession;
-import com.ashwani.HealthCare.Entity.TwilioWebhookEventEntity;
+import com.ashwani.HealthCare.Entity.TwilioWebhookEvent;
 import com.ashwani.HealthCare.Service.Communication.VideoCallService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -69,7 +69,7 @@ public class VideoCallController {
      * @param event Webhook event payload
      * @return 200 OK on success
      */
-    public ResponseEntity<Void> handleTwilioWebhook(@RequestBody TwilioWebhookEventEntity event) {
+    public ResponseEntity<Void> handleTwilioWebhook(@RequestBody TwilioWebhookEvent event) {
         videoCallService.processTwilioWebhook(event);
         return ResponseEntity.ok().build();
     }

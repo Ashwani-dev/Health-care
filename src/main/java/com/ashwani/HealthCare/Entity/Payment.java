@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class PaymentEntity {
+public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,7 +25,7 @@ public class PaymentEntity {
     @Column(name = "order_id", unique = true)
     private String orderId;         // Cashfree order ID
     
-    private String status;          // PaymentEntity status (PAID, FAILED, etc.)
+    private String status;          // Payment status (PAID, FAILED, etc.)
     @Column(name = "reference_id", unique = true)
     private String referenceId;     // Cashfree transaction/reference ID
     @Column(name = "payment_mode")

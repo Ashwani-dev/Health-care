@@ -2,6 +2,12 @@ package com.ashwani.HealthCare.Service.Appointment;
 
 import com.ashwani.HealthCare.DTO.Appointments.PatientAppointmentResponse;
 import com.ashwani.HealthCare.Entity.*;
+import com.ashwani.HealthCare.ExceptionHandlers.appointment.AppointmentCancellationException;
+import com.ashwani.HealthCare.ExceptionHandlers.appointment.InvalidAppointmentStateException;
+import com.ashwani.HealthCare.ExceptionHandlers.appointment.SlotNotAvailableException;
+import com.ashwani.HealthCare.ExceptionHandlers.auth.UnauthorizedAccessException;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
+import com.ashwani.HealthCare.ExceptionHandlers.payment.PaymentException;
 import com.ashwani.HealthCare.Repository.*;
 import com.ashwani.HealthCare.Service.Communication.EmailService;
 import com.ashwani.HealthCare.Utility.TimeSlot;
@@ -11,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +43,7 @@ public class AppointmentService {
     private final PaymentRepository paymentRepository;
 
 
-    private PatientAppointmentResponse convertToResponse(AppointmentEntity appointment) {
+    private PatientAppointmentResponse convertToResponse(Appointment appointment) {
         return new PatientAppointmentResponse(
                 appointment.getId(),
                 appointment.getPatient().getId(),
@@ -55,11 +60,11 @@ public class AppointmentService {
     }
 
     public String createAppointmentHold(Long patientId, Long doctorId, LocalDate date,
-                                        LocalTime startTime, String description) throws Exception {
+                                        LocalTime startTime, String description) {
 
         // Validate doctor exists and slot is available
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         validateSlotNotBooked(doctor, date, startTime);
         validateDoctorAvailability(doctor, date, startTime);
@@ -85,20 +90,20 @@ public class AppointmentService {
 
 
     @Transactional
-    public AppointmentEntity bookAppointment(Long patientId, Long doctorId, LocalDate date,
-                                             LocalTime startTime, String description, Long paymentId,
-                                             String holdReference) throws Exception {
-        PatientEntity patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient Not Found"));
+    public Appointment bookAppointment(Long patientId, Long doctorId, LocalDate date,
+                                       LocalTime startTime, String description, Long paymentId,
+                                       String holdReference) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient", patientId));
 
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor Not Found"));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
-        PaymentEntity payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment is not found"));
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
 
         if(!Objects.equals(payment.getStatus(), "SUCCESS")){
-            throw new Exception("Payment is not completed");
+            throw new PaymentException("Payment is not completed");
         }
 
         // Only check for existing bookings if NOT booking from a valid hold
@@ -115,7 +120,7 @@ public class AppointmentService {
         // Default duration - could be parameterized
         LocalTime endTime = startTime.plusMinutes(30);
 
-        AppointmentEntity appointment = new AppointmentEntity();
+        Appointment appointment = new Appointment();
         appointment.setPatient(patient);
         appointment.setDoctor(doctor);
         appointment.setAppointmentDate(date);
@@ -151,17 +156,17 @@ public class AppointmentService {
             Pageable pageable) {
 
         if (!patientRepository.existsById(patientId)) {
-            throw new RuntimeException("Patient not found with ID: " + patientId);
+            throw new ResourceNotFoundException("Patient", patientId);
         }
 
         // Build specifications
-        Specification<AppointmentEntity> spec = Specification.where(AppointmentSpecifications.hasPatient(patientId))
+        Specification<Appointment> spec = Specification.where(AppointmentSpecifications.hasPatient(patientId))
                 .and(AppointmentSpecifications.hasAppointmentDateRange(appointmentStartDate, appointmentEndDate))
                 .and(AppointmentSpecifications.hasTimeRange(startTime, endTime))
                 .and(AppointmentSpecifications.hasStatus(status));
 
         // Get paginated results
-        Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
+        Page<Appointment> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
         // Process and convert to response DTOs
         return processAppointmentPage(appointmentPage);
@@ -179,17 +184,17 @@ public class AppointmentService {
 
         // Verify doctor exists using existsById (more efficient than findById)
         if (!doctorRepository.existsById(doctorId)) {
-            throw new RuntimeException("Doctor not found with ID: " + doctorId);
+            throw new ResourceNotFoundException("Doctor", doctorId);
         }
 
         // Combine all specifications
-        Specification<AppointmentEntity> spec = Specification.where(AppointmentSpecifications.hasDoctor(doctorId))
+        Specification<Appointment> spec = Specification.where(AppointmentSpecifications.hasDoctor(doctorId))
                 .and(AppointmentSpecifications.hasAppointmentDateRange(appointmentStartDate, appointmentEndDate))
                 .and(AppointmentSpecifications.hasTimeRange(startTime, endTime))
                 .and(AppointmentSpecifications.hasStatus(status));
 
         // Get paginated results
-        Page<AppointmentEntity> appointmentPage = appointmentRepository.findAll(spec, pageable);
+        Page<Appointment> appointmentPage = appointmentRepository.findAll(spec, pageable);
 
         // Process and convert to response DTOs
         return processAppointmentPage(appointmentPage);
@@ -198,8 +203,8 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public List<TimeSlot> getAvailableSlots(Long doctorId, LocalDate date) {
         // 1. Early validation
-        DoctorEntity doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor", doctorId));
 
         // 2. Batch fetch data
         List<DoctorAvailability> availabilities = doctorAvailabilityRepository
@@ -208,7 +213,7 @@ public class AppointmentService {
         Set<LocalTime> bookedSlots = appointmentRepository
                 .findByDoctorAndAppointmentDate(doctor, date)
                 .stream()
-                .map(AppointmentEntity::getStartTime)
+                .map(Appointment::getStartTime)
                 .collect(Collectors.toSet());
 
         // 3. Process slots efficiently
@@ -233,8 +238,8 @@ public class AppointmentService {
 
     @Transactional
     public void cancelAppointment(Long appointmentId, Long userId) {
-        AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         validateCancellation(appointment, userId);
         appointment.cancel(userId);
@@ -245,16 +250,20 @@ public class AppointmentService {
 
     @Transactional
     public PatientAppointmentResponse updateAppointment(Long appointmentId, LocalDate appointmentDate,
-                                                        LocalTime startTime, LocalTime endTime) throws Exception {
-        AppointmentEntity appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                                                        LocalTime startTime, LocalTime endTime) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", appointmentId));
 
         // Only allow updates for SCHEDULED appointments
         if (!"SCHEDULED".equals(appointment.getStatus())) {
-            throw new IllegalStateException("Can only update appointments with SCHEDULED status. Current status: " + appointment.getStatus());
+            throw new InvalidAppointmentStateException(
+                    "Can only update appointments with SCHEDULED status",
+                    appointment.getStatus(),
+                    "UPDATE"
+            );
         }
 
-        DoctorEntity doctor = appointment.getDoctor();
+        Doctor doctor = appointment.getDoctor();
 
         // Validate the new slot
         if (appointmentDate != null && startTime != null) {
@@ -265,7 +274,7 @@ public class AppointmentService {
                     doctor, appointmentDate, startTime, appointmentId);
 
             if (isSlotBooked) {
-                throw new Exception("Time slot already booked");
+                throw new SlotNotAvailableException("Time slot already booked", appointmentDate, startTime);
             }
         }
 
@@ -280,33 +289,33 @@ public class AppointmentService {
             appointment.setEndTime(endTime);
         }
 
-        AppointmentEntity updatedAppointment = appointmentRepository.save(appointment);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
         log.info("Updated appointment ID: {} to date: {}, startTime: {}, endTime: {}",
                 appointmentId, appointmentDate, startTime, endTime);
 
         return convertToResponse(updatedAppointment);
     }
 
-    private void validateCancellation(AppointmentEntity appointment, Long userId) {
+    private void validateCancellation(Appointment appointment, Long userId) {
         // Check if user is either the patient or the doctor
         boolean isPatient = appointment.belongsToPatient(userId);
         boolean isDoctor = appointment.belongsToDoctor(userId);
 
         if (!isPatient && !isDoctor) {
-            throw new AccessDeniedException("You are not authorized to cancel this appointment");
+            throw new UnauthorizedAccessException("You are not authorized to cancel this appointment", userId, "Appointment");
         }
 
         // Only patients need to respect the 24-hour cancellation deadline
         // Doctors can cancel anytime for emergency or scheduling conflicts
         if (isPatient && appointment.isPastCancellationDeadline()) {
-            throw new RuntimeException("24-hour cancellation required");
+            throw new AppointmentCancellationException("Cancellation requires 24-hour advance notice");
         }
     }
 
     /**
      * Validates if a time slot is within doctor's availability schedule
      */
-    private void validateDoctorAvailability(DoctorEntity doctor, LocalDate date, LocalTime startTime) throws Exception {
+    private void validateDoctorAvailability(Doctor doctor, LocalDate date, LocalTime startTime) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         List<DoctorAvailability> availabilities = doctorAvailabilityRepository.findByDoctorAndDayOfWeek(doctor, dayOfWeek);
 
@@ -316,16 +325,16 @@ public class AppointmentService {
                         !startTime.isAfter(av.getEndTime()));
 
         if (!isAvailable) {
-            throw new Exception("Doctor is not available at this time");
+            throw new SlotNotAvailableException("Doctor is not available at this time", date, startTime);
         }
     }
 
     /**
      * Checks if a time slot is already booked for a doctor
      */
-    private void validateSlotNotBooked(DoctorEntity doctor, LocalDate date, LocalTime startTime) throws Exception {
+    private void validateSlotNotBooked(Doctor doctor, LocalDate date, LocalTime startTime) {
         if (appointmentRepository.existsByDoctorAndAppointmentDateAndStartTime(doctor, date, startTime)) {
-            throw new Exception("Time slot already booked");
+            throw new SlotNotAvailableException("Time slot already booked", date, startTime);
         }
     }
 
@@ -333,7 +342,7 @@ public class AppointmentService {
      * Updates appointment status to COMPLETED if past end time
      * Returns updated appointment or original if no update needed
      */
-    private AppointmentEntity updateAppointmentStatusIfNeeded(AppointmentEntity appointment) {
+    private Appointment updateAppointmentStatusIfNeeded(Appointment appointment) {
         if (appointment.getStatus().equals("SCHEDULED") &&
                 (appointment.getAppointmentDate().isBefore(LocalDate.now()) ||
                         (appointment.getAppointmentDate().isEqual(LocalDate.now()) &&
@@ -347,15 +356,15 @@ public class AppointmentService {
     /**
      * Processes a page of appointments, updating statuses and converting to responses
      */
-    private Page<PatientAppointmentResponse> processAppointmentPage(Page<AppointmentEntity> appointmentPage) {
+    private Page<PatientAppointmentResponse> processAppointmentPage(Page<Appointment> appointmentPage) {
         // Update statuses for all appointments in the page
-        List<AppointmentEntity> updatedContent = appointmentPage.getContent().stream()
+        List<Appointment> updatedContent = appointmentPage.getContent().stream()
                 .map(this::updateAppointmentStatusIfNeeded)
                 .toList();
 
         // Convert to response DTOs
         return appointmentPage.map(apt -> {
-            AppointmentEntity updated = updatedContent.stream()
+            Appointment updated = updatedContent.stream()
                     .filter(u -> u.getId().equals(apt.getId()))
                     .findFirst()
                     .orElse(apt);

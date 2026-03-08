@@ -1,8 +1,10 @@
 package com.ashwani.HealthCare.Service.Payment.Event;
 
 import com.ashwani.HealthCare.DTO.Payment.PaymentCompletedEvent;
-import com.ashwani.HealthCare.Entity.AppointmentEntity;
+import com.ashwani.HealthCare.Entity.Appointment;
 import com.ashwani.HealthCare.Entity.AppointmentHold;
+import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
+import com.ashwani.HealthCare.ExceptionHandlers.token.TokenExpiredException;
 import com.ashwani.HealthCare.Repository.AppointmentHoldRepository;
 import com.ashwani.HealthCare.Service.Appointment.AppointmentService;
 import lombok.RequiredArgsConstructor;
@@ -45,14 +47,13 @@ public class PaymentEventListener {
         try {
             // 1. Get appointment details from hold service
             AppointmentHold hold = appointmentHoldRepository.findByHoldReference(event.getAppointmentHoldReference())
-                    .orElseThrow(() -> new RuntimeException("Appointment hold not found or expired: " +
+                    .orElseThrow(() -> new ResourceNotFoundException("Appointment hold",
                             event.getAppointmentHoldReference()));
 
             // 2. Check if hold is still valid
             if (hold.getExpiresAt().isBefore(LocalDateTime.now())) {
                 log.error("Appointment hold expired: {}", event.getAppointmentHoldReference());
-                // Handle expired hold - maybe refund?
-                return;
+                throw new TokenExpiredException("Appointment hold has expired", "APPOINTMENT_HOLD");
             }
 
             // 3. Convert customerId to Long
@@ -60,7 +61,7 @@ public class PaymentEventListener {
 
             // 4. Call bookAppointment with hold reference to skip duplicate slot check
             // The slot was already validated during hold creation, so we can safely book it
-            AppointmentEntity appointment = appointmentService.bookAppointment(
+            Appointment appointment = appointmentService.bookAppointment(
                     patientId,
                     hold.getDoctorId(),
                     hold.getDate(),

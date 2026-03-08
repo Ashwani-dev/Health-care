@@ -25,9 +25,10 @@ The Healthcare Management System uses PostgreSQL as the primary database with th
 - **ORM**: JPA/Hibernate
 
 ### Database Statistics
-- **Total Tables**: 9
-- **Total Indexes**: 15
+- **Total Tables**: 10
+- **Total Indexes**: 17
 - **Total Constraints**: 25
+- **Security Features**: JWT + TOTP/MFA (2FA)
 
 ---
 
@@ -167,6 +168,10 @@ CREATE TABLE patient_entities (
     gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     address TEXT,
     medical_history TEXT,
+    -- TOTP/MFA fields
+    totp_secret VARCHAR(255),
+    totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
 );
@@ -186,6 +191,9 @@ CREATE INDEX idx_patient_gender ON patient_entities(gender);
 - `gender` - Gender (MALE, FEMALE, OTHER)
 - `address` - Residential address
 - `medical_history` - Medical history notes
+- `totp_secret` - TOTP secret key for 2FA (encrypted/nullable)
+- `totp_enabled` - Whether TOTP/2FA is enabled for this account
+- `login_method` - Login method (PASSWORD, TOTP, or BOTH)
 - `created_at` - Profile creation timestamp
 - `updated_at` - Last update timestamp
 
@@ -653,13 +661,146 @@ ANALYZE;
 
 ---
 
+## 🔐 TOTP/MFA (Two-Factor Authentication)
+
+### Overview
+The system supports Time-based One-Time Password (TOTP) authentication for enhanced security. Both doctors and patients can enable 2FA using authenticator apps.
+
+### TOTP Fields in User Tables
+
+#### Added to `doctor_entities` and `patient_entities`:
+```sql
+ALTER TABLE doctor_entities ADD COLUMN totp_secret VARCHAR(255);
+ALTER TABLE doctor_entities ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE doctor_entities ADD COLUMN login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
+
+ALTER TABLE patient_entities ADD COLUMN totp_secret VARCHAR(255);
+ALTER TABLE patient_entities ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE patient_entities ADD COLUMN login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
+```
+
+### Field Descriptions
+
+| Column | Type | Description | Default |
+|--------|------|-------------|---------|
+| `totp_secret` | VARCHAR(255) | TOTP secret key for generating codes | NULL |
+| `totp_enabled` | BOOLEAN | Whether TOTP is enabled for this account | FALSE |
+| `login_method` | VARCHAR(20) | Login method: PASSWORD, TOTP, or BOTH | 'PASSWORD' |
+
+### Login Method Values
+
+- **PASSWORD**: Traditional email + password authentication (default)
+- **BOTH**: User can login with either password OR TOTP code
+- **TOTP**: TOTP-only login (password login blocked)
+
+### TOTP Setup Flow
+
+1. User authenticates with password → receives JWT token
+2. User calls setup endpoint → system generates secret and QR code
+3. User scans QR code with authenticator app
+4. User confirms with 6-digit code → TOTP enabled
+5. `login_method` changes from PASSWORD to BOTH
+6. User can now login with either password or TOTP
+
+### Security Features
+
+- **Secret Storage**: TOTP secrets stored in database (consider encryption in production)
+- **Code Validation**: 6-digit codes valid for 30-second window
+- **Algorithm**: SHA-1 HMAC (RFC 6238 compliant)
+- **Issuer**: Configurable application name in QR code
+- **Recovery**: Users can disable TOTP to revert to password-only
+
+### Monitoring TOTP Usage
+
+```sql
+-- Check TOTP adoption rate
+SELECT 
+    'Doctors' as user_type,
+    COUNT(*) as total_users,
+    COUNT(*) FILTER (WHERE totp_enabled = true) as totp_enabled_users,
+    ROUND(COUNT(*) FILTER (WHERE totp_enabled = true)::DECIMAL / COUNT(*) * 100, 2) as adoption_percentage
+FROM doctor_entities
+UNION ALL
+SELECT 
+    'Patients' as user_type,
+    COUNT(*) as total_users,
+    COUNT(*) FILTER (WHERE totp_enabled = true) as totp_enabled_users,
+    ROUND(COUNT(*) FILTER (WHERE totp_enabled = true)::DECIMAL / COUNT(*) * 100, 2) as adoption_percentage
+FROM patient_entities;
+
+-- Login method distribution
+SELECT 
+    'Doctors' as user_type,
+    login_method,
+    COUNT(*) as count
+FROM doctor_entities
+GROUP BY login_method
+UNION ALL
+SELECT 
+    'Patients' as user_type,
+    login_method,
+    COUNT(*) as count
+FROM patient_entities
+GROUP BY login_method
+ORDER BY user_type, login_method;
+
+-- Recently enabled TOTP
+SELECT 
+    'Doctor' as user_type,
+    id,
+    email,
+    totp_enabled,
+    login_method,
+    updated_at
+FROM doctor_entities
+WHERE totp_enabled = true
+ORDER BY updated_at DESC
+LIMIT 10;
+```
+
+### Migration Script
+
+```sql
+-- Add TOTP columns to existing tables
+-- Run this migration before deploying TOTP feature
+
+-- For doctors
+ALTER TABLE doctors 
+    ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
+
+-- For patients  
+ALTER TABLE patients 
+    ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
+
+-- Verify migration
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name IN ('doctors', 'patients')
+AND column_name IN ('totp_secret', 'totp_enabled', 'login_method')
+ORDER BY table_name, column_name;
+```
+
+---
+
 ## 🔒 Security Considerations
 
 ### Data Protection
 - All sensitive data is encrypted at rest
-- Passwords are hashed using BCrypt
+- Passwords are hashed using BCrypt (strength 10)
+- TOTP secrets stored in database (consider additional encryption for production)
 - Database connections use SSL/TLS
 - Access is restricted to application users only
+
+### Authentication Security
+- **JWT Tokens**: Signed tokens with configurable expiration
+- **TOTP/MFA**: Optional two-factor authentication with authenticator apps
+- **Password Policy**: Minimum 6 characters (consider strengthening in production)
+- **Login Method Enforcement**: System validates correct authentication method
+- **Token Expiry**: Password reset tokens expire after 60 minutes
 
 ### Backup Strategy
 ```bash

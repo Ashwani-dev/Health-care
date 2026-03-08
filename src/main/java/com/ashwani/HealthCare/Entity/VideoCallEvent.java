@@ -21,14 +21,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class VideoCallEventEntity {
+public class VideoCallEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
-    private VideoCallSessionsEntity session;
+    private VideoCallSessions session;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)

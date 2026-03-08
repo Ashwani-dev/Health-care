@@ -14,4 +14,5 @@ public class PatientProfile {
     private String email;
     private String contact_number;
     private String address;
+    private boolean totpEnabled;
 }
