@@ -6,6 +6,7 @@ import com.ashwani.HealthCare.Entity.AppointmentHold;
 import com.ashwani.HealthCare.ExceptionHandlers.common.ResourceNotFoundException;
 import com.ashwani.HealthCare.ExceptionHandlers.token.TokenExpiredException;
 import com.ashwani.HealthCare.Repository.AppointmentHoldRepository;
+import com.ashwani.HealthCare.Repository.AppointmentRepository;
 import com.ashwani.HealthCare.Service.Appointment.AppointmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class PaymentEventListener {
 
     private final AppointmentService appointmentService;
     private final AppointmentHoldRepository appointmentHoldRepository;
+    private final AppointmentRepository appointmentRepository;
 
     /**
      * Dynamically declare and listen to the payment.completed queue.
@@ -45,6 +48,14 @@ public class PaymentEventListener {
     )
     public void handlePaymentCompletedEvent(PaymentCompletedEvent event) {
         try {
+            // 0. IDEMPOTENCY CHECK: Check if appointment already exists for this payment
+            Optional<Appointment> existingAppointment = appointmentRepository.findByPaymentId(event.getPaymentId());
+            if (existingAppointment.isPresent()) {
+                log.info("⚠️ IDEMPOTENCY: Appointment already exists for payment {} (appointmentId: {}). Skipping duplicate creation.",
+                        event.getOrderId(), existingAppointment.get().getId());
+                return; // Acknowledge message and skip processing
+            }
+
             // 1. Get appointment details from hold service
             AppointmentHold hold = appointmentHoldRepository.findByHoldReference(event.getAppointmentHoldReference())
                     .orElseThrow(() -> new ResourceNotFoundException("Appointment hold",

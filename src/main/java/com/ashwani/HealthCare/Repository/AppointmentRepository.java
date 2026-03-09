@@ -55,4 +55,7 @@ public interface AppointmentRepository extends
     @EntityGraph(attributePaths = {"patient", "doctor", "paymentDetails"})
     @NonNull
     Optional<Appointment> findById(@NonNull Long id);
+
+    @Query("SELECT a FROM Appointment a WHERE a.paymentDetails.id = :paymentId")
+    Optional<Appointment> findByPaymentId(@Param("paymentId") Long paymentId);
 }

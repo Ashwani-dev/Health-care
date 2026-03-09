@@ -19,7 +19,7 @@ public class AvailabilityResponseDto {
     private DayOfWeek dayOfWeek;
     private LocalTime startTime;
     private LocalTime endTime;
-    private boolean isAvailable;
+    private Boolean isAvailable;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

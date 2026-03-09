@@ -13,5 +13,5 @@ public class AvailabilityRequestDto {
     private DayOfWeek dayOfWeek;
     private LocalTime startTime;
     private LocalTime endTime;
-    private boolean isAvailable = true;
+    private Boolean isAvailable = true;
 }
