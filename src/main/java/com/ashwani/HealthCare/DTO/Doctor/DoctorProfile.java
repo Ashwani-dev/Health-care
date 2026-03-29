@@ -20,4 +20,5 @@ public class DoctorProfile {
     private String specialization;
     private Gender gender;
     private String license_number;
+    private boolean totpEnabled;
 }
