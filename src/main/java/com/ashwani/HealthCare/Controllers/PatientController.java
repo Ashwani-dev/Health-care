@@ -2,7 +2,9 @@ package com.ashwani.HealthCare.Controllers;
 
 
 import com.ashwani.HealthCare.DTO.Patient.PatientProfile;
+import com.ashwani.HealthCare.DTO.Patient.PatientProfilePatchRequest;
 import com.ashwani.HealthCare.DTO.Patient.PatientProfileUpdateRequest;
+import com.ashwani.HealthCare.DTO.Patient.PatientProfileImagePatchResponse;
 import com.ashwani.HealthCare.Entity.Patient;
 import com.ashwani.HealthCare.Repository.PatientRepository;
 import com.ashwani.HealthCare.Service.Patient.PatientService;
@@ -23,12 +25,8 @@ public class PatientController {
     private final PatientService patientService;
     private final ModelMapper modelMapper;
 
+    // Get the authenticated patient's profile
     @GetMapping("/profile")
-    /**
-     * Get the authenticated patient's profile
-     * @param principal Current authenticated patient
-     * @return Patient profile details
-     */
     public ResponseEntity<PatientProfile> getPatientProfile(Principal principal) {
         // Fetch patient details from database
         Long userId = Long.parseLong(principal.getName());
@@ -41,13 +39,8 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
+    // Update the authenticated patient's profile
     @PutMapping("/profile")
-    /**
-     * Update the authenticated patient's profile
-     * @param updateRequest Profile update payload
-     * @param principal Current authenticated patient
-     * @return Updated patient profile
-     */
     public ResponseEntity<PatientProfile> updatePatientProfile(
             @Valid @RequestBody PatientProfileUpdateRequest updateRequest,
             Principal principal) {
@@ -56,6 +49,18 @@ public class PatientController {
         PatientProfile updatedProfile = patientService.updatePatientProfile(patientId, updateRequest);
 
         return ResponseEntity.ok(updatedProfile);
+    }
+
+    // Patch the authenticated patient's profile image URL
+    @PatchMapping("/profile")
+    public ResponseEntity<PatientProfileImagePatchResponse> patchPatientProfileImage(
+            @Valid @RequestBody PatientProfilePatchRequest patchRequest,
+            Principal principal) {
+
+        Long patientId = Long.parseLong(principal.getName());
+        PatientProfileImagePatchResponse response = patientService.patchPatientProfileImage(patientId, patchRequest);
+
+        return ResponseEntity.ok(response);
     }
 
 

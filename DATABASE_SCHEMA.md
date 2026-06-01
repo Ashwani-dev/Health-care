@@ -131,6 +131,7 @@ CREATE TABLE doctor_entities (
     rating DECIMAL(3,2) DEFAULT 0.0,
     bio TEXT,
     address TEXT,
+    profile_image_url VARCHAR(500),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP
 );
@@ -152,6 +153,7 @@ CREATE INDEX idx_doctor_rating ON doctor_entities(rating);
 - `rating` - Average rating (0.0 to 5.0)
 - `bio` - Professional biography
 - `address` - Practice address
+- `profile_image_url` - Optional URL/path to the doctor's profile image
 - `created_at` - Profile creation timestamp
 - `updated_at` - Last update timestamp
 
@@ -168,6 +170,7 @@ CREATE TABLE patient_entities (
     gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE', 'OTHER')),
     address TEXT,
     medical_history TEXT,
+    profile_image_url VARCHAR(500),
     -- TOTP/MFA fields
     totp_secret VARCHAR(255),
     totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
@@ -191,6 +194,7 @@ CREATE INDEX idx_patient_gender ON patient_entities(gender);
 - `gender` - Gender (MALE, FEMALE, OTHER)
 - `address` - Residential address
 - `medical_history` - Medical history notes
+- `profile_image_url` - Optional URL/path to the patient's profile image
 - `totp_secret` - TOTP secret key for 2FA (encrypted/nullable)
 - `totp_enabled` - Whether TOTP/2FA is enabled for this account
 - `login_method` - Login method (PASSWORD, TOTP, or BOTH)
@@ -766,12 +770,14 @@ LIMIT 10;
 
 -- For doctors
 ALTER TABLE doctors 
+    ADD COLUMN IF NOT EXISTS profile_image_url VARCHAR(500),
     ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(255),
     ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
 
 -- For patients  
 ALTER TABLE patients 
+    ADD COLUMN IF NOT EXISTS profile_image_url VARCHAR(500),
     ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(255),
     ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS login_method VARCHAR(20) NOT NULL DEFAULT 'PASSWORD';
@@ -780,7 +786,7 @@ ALTER TABLE patients
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns
 WHERE table_name IN ('doctors', 'patients')
-AND column_name IN ('totp_secret', 'totp_enabled', 'login_method')
+AND column_name IN ('profile_image_url', 'totp_secret', 'totp_enabled', 'login_method')
 ORDER BY table_name, column_name;
 ```
 

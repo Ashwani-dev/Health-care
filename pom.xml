@@ -209,6 +209,14 @@
 			<version>4.10.0</version>
 		</dependency>
 		
+		<!-- AWS SDK v2 for S3 - for AWS S3 file uploads and presigned URLs -->
+		<!-- Used for: Generating presigned URLs for direct S3 uploads, S3 object operations -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.25.0</version>
+		</dependency>
+
 		<!-- ============================================ -->
 		<!-- Validation & Data Mapping -->
 		<!-- ============================================ -->

@@ -31,12 +31,12 @@ public class EmailService {
 
 
     private String generatePatientJoinLink(Long appointmentId) {
-        return frontendUrl + "video-preview/" + appointmentId + "/PATIENT";
+        return frontendUrl + "/video-preview/" + appointmentId + "/PATIENT";
 
     }
 
     private String generateDoctorJoinLink(Long appointmentId) {
-        return frontendUrl + "video-preview/" + appointmentId + "/DOCTOR";
+        return frontendUrl + "/video-preview/" + appointmentId + "/DOCTOR";
     }
 
     private void sendPatientEmail(Doctor doctor, Patient patient,

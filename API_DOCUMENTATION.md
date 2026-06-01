@@ -617,7 +617,8 @@ Authorization: Bearer <jwt-token>
   "rating": 4.5,
   "consultationFee": 100.00,
   "bio": "Experienced cardiologist with expertise in...",
-  "address": "123 Medical Center Dr, City, State"
+  "address": "123 Medical Center Dr, City, State",
+  "profileImageUrl": "/uploads/profile/doctor-1.jpg"
 }
 ```
 
@@ -653,6 +654,48 @@ Authorization: Bearer <jwt-token>
   "phone": "+1234567890",
   "specialization": "Cardiology",
   "experience": 10,
+  "profileImageUrl": "/uploads/profile/doctor-1.jpg",
+  "consultationFee": 100.00,
+  "bio": "Updated bio information",
+  "address": "123 Medical Center Dr, City, State"
+}
+```
+
+### Patch Doctor Profile Image
+**PATCH** `/api/doctor/profile`
+
+Update or remove the authenticated doctor's profile image URL. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "/uploads/profile/doctor-1.jpg"
+}
+```
+
+To remove the stored image path, send:
+
+```json
+{
+  "profileImageUrl": null
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "name": "Dr. John Smith",
+  "email": "smith@example.com",
+  "phone": "+1234567890",
+  "specialization": "Cardiology",
+  "experience": 10,
+  "profileImageUrl": "/uploads/profile/doctor-1.jpg",
   "consultationFee": 100.00,
   "bio": "Updated bio information",
   "address": "123 Medical Center Dr, City, State"
@@ -811,7 +854,8 @@ Authorization: Bearer <jwt-token>
   "dateOfBirth": "1990-01-01",
   "gender": "MALE",
   "address": "123 Main St, City, State",
-  "medicalHistory": "No significant medical history"
+  "medicalHistory": "No significant medical history",
+  "profileImageUrl": "/uploads/profile/patient-1.jpg"
 }
 ```
 
@@ -847,7 +891,48 @@ Authorization: Bearer <jwt-token>
   "dateOfBirth": "1990-01-01",
   "gender": "MALE",
   "address": "123 Main St, City, State",
-  "medicalHistory": "Updated medical history"
+  "medicalHistory": "Updated medical history",
+  "profileImageUrl": "/uploads/profile/patient-1.jpg"
+}
+```
+
+### Patch Patient Profile Image
+**PATCH** `/api/patient/profile`
+
+Update or remove the authenticated patient's profile image URL. Requires authentication.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "/uploads/profile/patient-1.jpg"
+}
+```
+
+To remove the stored image path, send:
+
+```json
+{
+  "profileImageUrl": null
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "phone": "+1234567890",
+  "dateOfBirth": "1990-01-01",
+  "gender": "MALE",
+  "address": "123 Main St, City, State",
+  "medicalHistory": "Updated medical history",
+  "profileImageUrl": "/uploads/profile/patient-1.jpg"
 }
 ```
 

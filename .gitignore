@@ -3,6 +3,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+src/test/java/com/ashwani/HealthCare/Service/
 
 **/.DS_Store
 
@@ -41,3 +42,6 @@ build/
 ### DB Migrations ###
 src/main/resources/db/migration
 DATABASE_MIGRATIONS.md
+
+docs/*
+!docs/project_context.md

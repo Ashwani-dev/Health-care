@@ -66,6 +66,9 @@ public class Doctor {
     @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "License number must be alphanumeric with optional hyphens")
     private String license_number;
 
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     // TOTP/MFA fields
     @Column(name = "totp_secret")
     private String totpSecret;

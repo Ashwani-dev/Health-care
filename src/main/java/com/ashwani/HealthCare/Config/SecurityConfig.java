@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,7 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Disable CSRF (APIs are stateless)
+                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF (APIs are stateless)
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (no auth required)
                         .requestMatchers(
@@ -59,6 +60,7 @@ public class SecurityConfig {
                         // Role-based access
                         .requestMatchers("/api/patient/**").hasRole("PATIENT")
                         .requestMatchers(HttpMethod.PUT, "/api/doctor/profile").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/doctor/profile").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.GET,"/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.POST, "/api/availability/{doctorId}").hasRole("DOCTOR")
                         .requestMatchers("/api/availability/**").hasAnyRole("DOCTOR", "PATIENT")
@@ -96,8 +98,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // Parse allowed origins from environment variable or use defaults
-        List<String> allowedOrigins = Arrays.asList(corsAllowedOrigins.split(","))
-                .stream()
+        List<String> allowedOrigins = Arrays.stream(corsAllowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isEmpty())
                 .collect(Collectors.toList());

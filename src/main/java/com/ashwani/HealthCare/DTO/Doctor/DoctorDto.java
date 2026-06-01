@@ -12,5 +12,5 @@ public class DoctorDto {
     private String specialization;
     private Gender gender;
     private Integer medical_experience;
-//    private String profilePictureUrl;
+    private String profileImageUrl;
 }

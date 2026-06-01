@@ -53,6 +53,9 @@ public class Patient {
     @NotBlank(message = "Address is required")
     private String address;
 
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     // TOTP/MFA fields
     @Column(name = "totp_secret")
     private String totpSecret;

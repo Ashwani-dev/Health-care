@@ -4,7 +4,9 @@ package com.ashwani.HealthCare.Controllers;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorDto;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfile;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileById;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfilePatchRequest;
 import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileUpdateRequest;
+import com.ashwani.HealthCare.DTO.Doctor.DoctorProfileImagePatchResponse;
 import com.ashwani.HealthCare.Entity.Doctor;
 import com.ashwani.HealthCare.Enums.Gender;
 import com.ashwani.HealthCare.Repository.DoctorRepository;
@@ -29,12 +31,8 @@ public class DoctorController {
     private final ModelMapper modelMapper;
 
 
+    // Get the authenticated doctor's profile
     @GetMapping("/profile")
-    /**
-     * Get the authenticated doctor's profile
-     * @param principal Current authenticated doctor
-     * @return Doctor profile details
-     */
     public ResponseEntity<DoctorProfile> getDoctorProfile(Principal principal) {
         // Fetch doctor details from database
         long userId = Long.parseLong(principal.getName());
@@ -47,13 +45,8 @@ public class DoctorController {
         return ResponseEntity.ok(response);
     }
 
+    // Update the authenticated doctor's profile
     @PutMapping("/profile")
-    /**
-     * Update the authenticated doctor's profile
-     * @param updateRequest Profile update payload
-     * @param principal Current authenticated doctor
-     * @return Updated doctor profile details
-     */
     public ResponseEntity<DoctorProfile> updateDoctorProfile(
             @Valid @RequestBody DoctorProfileUpdateRequest updateRequest,
             Principal principal) {
@@ -64,26 +57,29 @@ public class DoctorController {
         return ResponseEntity.ok(updatedProfile);
     }
 
+    // Patch the authenticated doctor's profile image URL
+    @PatchMapping("/profile")
+    public ResponseEntity<DoctorProfileImagePatchResponse> patchDoctorProfileImage(
+            @Valid @RequestBody DoctorProfilePatchRequest patchRequest,
+            Principal principal) {
+
+        Long doctorId = Long.parseLong(principal.getName());
+        DoctorProfileImagePatchResponse response = doctorService.patchDoctorProfileImage(doctorId, patchRequest);
+
+        return ResponseEntity.ok(response);
+    }
+
     // Single-search-bar endpoint
+    // Search doctors using a single free-text query
     @GetMapping("/search")
-    /**
-     * Search doctors using a single free-text query
-     * @param q Optional search string
-     * @return List of matching doctors
-     */
     public ResponseEntity<List<DoctorDto>> searchDoctorUsingSearchBar(
             @RequestParam(required = false) String q){
         return ResponseEntity.ok(doctorService.searchDoctors(q, null, null));
     }
 
     // Multi-field filter endpoint
+    // Filter doctors by multiple fields
     @GetMapping("/filter")
-    /**
-     * Filter doctors by multiple fields
-     * @param specialization Optional specialization filter
-     * @param gender Optional gender filter (MALE, FEMALE, OTHER)
-     * @return List of doctors matching filters
-     */
     public List<DoctorDto> searchDoctorUsingFilters(
             @RequestParam(required = false) String specialization,
             @RequestParam(required = false) Gender gender
@@ -91,12 +87,8 @@ public class DoctorController {
         return doctorService.searchDoctors(null, specialization, gender);
     }
 
+    // Get doctor profile by ID (public read-only information)
     @GetMapping("/{id}")
-    /**
-     * Get doctor profile by ID (public read-only information)
-     * @param id Doctor ID
-     * @return Doctor profile with public information
-     */
     public ResponseEntity<DoctorProfileById> getDoctorProfileById(@PathVariable Long id) {
         DoctorProfileById profile = doctorService.getDoctorProfileById(id);
         return ResponseEntity.ok(profile);

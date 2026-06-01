@@ -12,6 +12,7 @@ public record DoctorProfileById(
         String contact_number,
         String specialization,
         Integer medical_experience,
-        Gender gender
+        Gender gender,
+        String profileImageUrl
 ) {
 }

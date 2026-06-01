@@ -9,5 +9,8 @@ public record PatientProfileUpdateRequest(
         String full_name,
 
         @Size(max = 200, message = "Address cannot exceed 200 characters")
-        String address
+        String address,
+
+        @Size(max = 500, message = "Profile image URL cannot exceed 500 characters")
+        String profileImageUrl
 ) {}
