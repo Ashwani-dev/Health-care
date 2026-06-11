@@ -62,9 +62,9 @@ RABBITMQ_URL=amqp://localhost:5672
 RABBITMQ_USERNAME=rabbitmq_user
 RABBITMQ_PASSWORD=rabbitmq_password
 
-# Email Configuration (Gmail example)
-EMAIL_ID=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
+# Email Configuration (AWS SES)
+MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+MAIL_SUPPORT=support@yourdomain.com
 
 # Twilio Configuration (get from https://console.twilio.com/)
 TWILIO_ACCOUNT_SID=your-account-sid

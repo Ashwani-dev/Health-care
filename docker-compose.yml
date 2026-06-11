@@ -7,12 +7,12 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-rabbitmq_user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq_password}
     ports:
-      - "${RABBITMQ_AMQP_PORT:-5672}:5672"   # AMQP port
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672" # AMQP port
       - "${RABBITMQ_MGMT_PORT:-15672}:15672" # Management UI port
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: healthcare-backend:latest
     container_name: ${APP_CONTAINER_NAME:-healthcare-app}
     ports:
       - "${APP_PORT:-8080}:8080"
@@ -51,12 +52,18 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
 
       # Email Configuration
-      EMAIL_ID: ${EMAIL_ID}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      MAIL_FROM_DO_NOT_REPLY: ${MAIL_FROM_DO_NOT_REPLY}
+      MAIL_SUPPORT: ${MAIL_SUPPORT}
 
       # Cashfree Configuration
       APP_ID: ${APP_ID}
       SECRET_KEY: ${SECRET_KEY}
+
+      # AWS S3 Configuration
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_REGION: ${AWS_REGION:-ap-south-1}
 
       # Frontend/Backend URLs
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}

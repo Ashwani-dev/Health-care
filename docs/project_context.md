@@ -1,7 +1,7 @@
 # Healthcare Management System
 
-**Document Version:** 1.0.0  
-**Last Updated:** 2026-05-03  
+**Document Version:** 1.1.0  
+**Last Updated:** 2026-06-07  
 **Project Status:** Active development
 
 ## Table of Contents
@@ -19,7 +19,6 @@
 - [11. Known Issues & Solutions](#11-known-issues--solutions)
 - [12. Deployment & Development](#12-deployment--development)
 - [13. Appendix: File Reference](#13-appendix-file-reference)
-- [14. Refactoring / Migration History](#14-refactoring--migration-history)
 
 ## 1. Executive Summary
 
@@ -31,7 +30,8 @@ The application is built for API consumers rather than a browser UI. No frontend
 ### Key Capabilities
 - JWT-based authentication with role claims for `PATIENT` and `DOCTOR`
 - Optional TOTP/MFA enrollment, confirmation, disablement, and TOTP login
-- Patient and doctor profile management with role-based access controls
+- Patient and doctor profile management with role-based access controls and S3 profile image uploads
+- AWS S3 Integration for direct client-to-S3 profile image uploads via presigned URLs
 - Appointment hold creation, booking, update, cancellation, and availability lookup
 - Dynamic appointment filtering by date range, time range, and status
 - Payment initiation, webhook processing, status lookup, and paginated payment history
@@ -41,13 +41,13 @@ The application is built for API consumers rather than a browser UI. No frontend
 ### Current Metrics
 | Metric | Value |
 |---|---:|
-| Java source files | 103 |
+| Java source files | 109 |
 | Test source files | 1 |
 | Controllers | 8 |
-| Services | 15 |
+| Services | 16 |
 | Entities | 10 |
 | Repositories | 10 |
-| DTO classes | 24 |
+| DTO classes | 28 |
 | Email templates | 3 |
 | Primary database | PostgreSQL |
 | Test database | H2 (`test` scope) |
@@ -80,6 +80,8 @@ persistence:
   primary_database: PostgreSQL
   dev_test_database: H2 (test scope)
   orm: Spring Data JPA / Hibernate
+storage:
+  provider: AWS S3 (direct-to-S3 uploads via presigned URLs)
 messaging:
   broker: RabbitMQ (Spring AMQP)
 email:
@@ -97,6 +99,7 @@ key_libraries:
   modelmapper: 3.2.0
   okhttp: 4.10.0
   spring_dotenv: 4.0.0
+  aws_sdk_s3: 2.25.0
   spring_boot_starter_hateoas: managed by Spring Boot parent
   spring_boot_starter_actuator: managed by Spring Boot parent
 build_tool:
@@ -168,15 +171,15 @@ Healthcare-backend/ # Spring Boot backend repository
     ├── main/
     │   ├── java/com/ashwani/HealthCare/ # Application root package
     │   │   ├── HealthCareApplication.java # Bootstraps Spring Boot, async, scheduling, transactions
-    │   │   ├── Config/ # Bean wiring, security, messaging, payments, auditing, Twilio
-    │   │   ├── Controllers/ # REST entry points for auth, appointment, doctor, patient, payment, availability, video call, MFA
-    │   │   ├── DTO/ # Request/response contracts grouped by feature
+    │   │   ├── Config/ # Bean wiring, security, messaging, payments, auditing, Twilio, AWS S3
+    │   │   ├── Controllers/ # REST entry points for auth, appointment, doctor, patient, payment, availability, video call, MFA, Profile Image
+    │   │   ├── DTO/ # Request/response contracts grouped by feature (Auth, Appointment, Doctor, Patient, Payment, Video)
     │   │   ├── Entity/ # JPA entities and workflow state tables
     │   │   ├── Enums/ # Appointment, gender, and login method enums
     │   │   ├── ExceptionHandlers/ # Domain-specific exceptions and global error mapping
     │   │   ├── Filter/ # JWT request filter
     │   │   ├── Repository/ # Spring Data JPA repositories and custom queries
-    │   │   ├── Service/ # Business logic, integrations, and event listeners
+    │   │   ├── Service/ # Business logic, integrations (Twilio, Cashfree, AWS S3), and event listeners
     │   │   ├── Utility/ # JWT helper and time-slot helper
     │   │   └── specifications/ # JPA Specification predicates for dynamic search/filtering
     │   └── resources/
@@ -211,6 +214,7 @@ Healthcare-backend/ # Spring Boot backend repository
 14. **Record-Based Immutable DTOs** — Several request/response objects are Java records (`AuthResponse`, `TotpConfirmRequest`, `DoctorProfileUpdateRequest`).
 15. **Profile-Based Configuration** — `dev`, `docker`, and `prod` profiles override base properties without code changes.
 16. **HATEOAS Pagination** — Appointment and payment list endpoints return `PagedModel<EntityModel<...>>` rather than raw lists.
+17. **Direct S3 Presigned URL Upload Pattern** — Offloads heavy file uploads by generating temporary upload URLs, allowing clients to PUT binaries directly to S3.
 
 ## 4. Core Features
 
@@ -288,20 +292,24 @@ public AuthResponse loginPatient(String email, String password) {
 ```
 
 ### 4.2 Doctor and Patient Profiles
-**Purpose:** Allow authenticated users to read and update their own profile data, plus public doctor lookup by ID.
+**Purpose:** Allow authenticated users to read and update their own profile data, request presigned URLs for profile picture S3 upload, confirm or remove profile pictures, plus public doctor lookup by ID.
 
-**Entry components/routes:** `DoctorController`, `PatientController`, `DoctorService`, `PatientService`.
+**Entry components/routes:** `DoctorController`, `PatientController`, `DoctorService`, `PatientService`, `AwsS3Service`.
+- `GET /api/doctor/profile` and `GET /api/patient/profile`
+- `PUT /api/doctor/profile` and `PUT /api/patient/profile`
+- `PATCH /api/doctor/profile` and `PATCH /api/patient/profile` (Profile image upload management)
 
 **Fields / inputs**
 
-| Field | Type | Required | Source |
-|---|---|---:|---|
-| `full_name` | `String` | Yes for updates | API |
-| `medical_experience` | `Integer` | Yes for doctor update | API |
-| `license_number` | `String` | Yes for doctor update | API |
-| `address` | `String` | Optional for patient update | API |
-| `specialization` | `String` | Static/persisted | DB |
-| `gender` | `Gender` enum | Persisted | DB |
+| Field | Type | Required | Source | Description / Format |
+|---|---|---:|---|---|
+| `full_name` | `String` | Yes for updates | API | User's displayed full name |
+| `medical_experience` | `Integer` | Yes for doctor update | API | Years of practice |
+| `license_number` | `String` | Yes for doctor update | API | Medical license key |
+| `address` | `String` | Optional for patient update | API | User's mailing/clinic address |
+| `specialization` | `String` | Static/persisted | DB | Doctor's department |
+| `gender` | `Gender` enum | Persisted | DB | Gender |
+| `profileImageUrl` | `String` | Optional | API | S3 Object Key or image location. Max 500 chars. |
 
 **Step-by-step user flow**
 1. Authenticate and send a JWT.
@@ -309,24 +317,48 @@ public AuthResponse loginPatient(String email, String password) {
 3. Send `PUT /api/doctor/profile` or `PUT /api/patient/profile` with updated allowed fields only.
 4. For public doctor lookup, call `GET /api/doctor/{id}`.
 
+**Profile Image Upload User Flow (Direct-to-S3 Presigned URL):**
+1. **Request Presigned Upload URL:** Client sends a `PATCH` request to `/api/doctor/profile` or `/api/patient/profile` with body `{"profileImageUrl": null}` (or omitting it).
+2. **Retrieve S3 URL:** The backend generates an S3 object key formatted as `profile-images/{type}/{userId}/{timestamp}-avatar.jpg` and requests a temporary upload URL from `S3Presigner` valid for 15 minutes. It returns:
+   ```json
+   {
+     "presignedUploadUrl": "https://...",
+     "s3ObjectKey": "profile-images/...",
+     "expirationTimeMinutes": 15
+   }
+   ```
+3. **Client Upload:** Client performs a direct HTTP `PUT` request containing the image binary to `presignedUploadUrl`.
+4. **Confirm Upload:** Client sends a `PATCH` request with body `{"profileImageUrl": "<s3ObjectKey>"}` using the key returned in step 2. The backend stores the object key in the database and returns the response DTO.
+5. **Remove Image:** Client sends a `PATCH` request with body `{"profileImageUrl": "remove"}`. The backend deletes the database value (sets it to `null`).
+
 **Business rules**
 - Doctor profile update validates unique `license_number` before save.
 - Patient profile updates only `full_name` and `address`.
 - Authentication principal is parsed as numeric user ID.
 - `DoctorProfile` includes `totpEnabled`; the change history shows this field was explicitly added.
+- The `profileImageUrl` length is validated to not exceed 500 characters.
+- Direct uploads bypass the Spring Boot backend completely to conserve JVM memory.
 
 **Cascading flow**
 ```text
-Profile GET/PUT
-  -> Controller reads Principal
-  -> Repository lookup by user ID
-  -> ModelMapper / DTO construction
-  -> Persist allowed fields only
-  -> Return profile DTO
+Profile GET/PUT:
+  Controller reads Principal -> Repository lookup -> DTO construction -> Return DTO
+
+Presigned URL Generation:
+  PATCH (image = null) -> AwsS3Service -> S3Presigner -> Return presigned URL + S3 key
+
+Direct S3 Upload:
+  Client -> HTTP PUT binary -> AWS S3 Bucket
+
+Confirm Upload:
+  PATCH (image = key) -> Repository save -> Update profileImageUrl column -> Return success DTO
+
+Remove Profile Image:
+  PATCH (image = "remove") -> Repository save -> Set profileImageUrl column to null -> Return success DTO
 ```
 
 **Persistence keys**
-- `doctors`, `patients`
+- `doctors`, `patients` (columns: `profile_image_url`)
 
 **Non-obvious logic snippet**
 ```java
@@ -771,6 +803,33 @@ initiatePayment -> order row saved as PENDING -> webhook updates row -> publish 
 appointment -> room creation -> participant webhook -> session update -> room completion
 ```
 
+### 5.6 Profile Image Upload State
+**Purpose:** Handle the temporary presigned S3 url, object key generation, and confirmation state.
+
+**State shape**
+```js
+{
+  presignedUploadUrl: "https://[bucket-name].s3.[region].amazonaws.com/profile-images/...",
+  s3ObjectKey: "profile-images/[doctor|patient]/[userId]/[timestamp]-avatar.jpg",
+  expirationTimeMinutes: 15
+}
+```
+
+**Exported functions**
+- `AwsS3Service.generateDoctorProfileImagePresignedUrl(Long): PresignedUrlResponse`
+- `AwsS3Service.generatePatientProfileImagePresignedUrl(Long): PresignedUrlResponse`
+- `AwsS3Service.generateS3ObjectKey(String, Long, String): String`
+- `DoctorService.patchDoctorProfileImage(Long, DoctorProfilePatchRequest): DoctorProfileImagePatchResponse`
+- `PatientService.patchPatientProfileImage(Long, PatientProfilePatchRequest): PatientProfileImagePatchResponse`
+
+**Data flow**
+```text
+PATCH profile request (null/remove/key) -> Doctor/Patient Service 
+  -> (If null) generate key -> call S3Presigner -> return presigned upload URL
+  -> (If remove) update DB to null -> return empty DTO
+  -> (If key) update DB to key -> return DTO containing key
+```
+
 ## 6. API Integration
 
 ### Base URLs Per Environment
@@ -805,11 +864,13 @@ appointment -> room creation -> participant webhook -> session update -> room co
 | Appointment | GET | `/api/appointments/availability/{doctorId}` | Available 30-minute slots for date |
 | Doctor | GET | `/api/doctor/profile` | Authenticated doctor profile |
 | Doctor | PUT | `/api/doctor/profile` | Update authenticated doctor profile |
+| Doctor | PATCH | `/api/doctor/profile` | Request, confirm, or remove S3 profile image URL |
 | Doctor | GET | `/api/doctor/search` | Free-text search |
 | Doctor | GET | `/api/doctor/filter` | Filter by specialization and gender |
 | Doctor | GET | `/api/doctor/{id}` | Public read-only doctor profile |
 | Patient | GET | `/api/patient/profile` | Authenticated patient profile |
 | Patient | PUT | `/api/patient/profile` | Update authenticated patient profile |
+| Patient | PATCH | `/api/patient/profile` | Request, confirm, or remove S3 profile image URL |
 | Availability | POST | `/api/availability/{doctorId}` | Set weekly availability |
 | Availability | GET | `/api/availability/{doctorId}` | Get weekly availability |
 | Availability | DELETE | `/api/availability/{doctorId}/{slotId}` | Delete a slot |
@@ -852,6 +913,48 @@ appointment -> room creation -> participant webhook -> session update -> room co
 {
   "qrCodeImage": "data:image/png;base64,...",
   "secret": "JBSWY3DPEHPK3PXP"
+}
+```
+
+#### Profile Image Upload Management
+```json
+// PATCH /api/doctor/profile (Step 1: request presigned upload URL)
+// Request Body:
+{
+  "profileImageUrl": null
+}
+
+// Response (200 OK):
+{
+  "presignedUploadUrl": "https://healthcare-images.s3.ap-south-1.amazonaws.com/profile-images/doctor/1/20260607011129-avatar.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&...",
+  "s3ObjectKey": "profile-images/doctor/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": 15
+}
+
+// PATCH /api/doctor/profile (Step 3: confirm uploaded key after direct PUT to S3)
+// Request Body:
+{
+  "profileImageUrl": "profile-images/doctor/1/20260607011129-avatar.jpg"
+}
+
+// Response (200 OK):
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": "profile-images/doctor/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": null
+}
+
+// PATCH /api/doctor/profile (Step 4: remove profile image)
+// Request Body:
+{
+  "profileImageUrl": "remove"
+}
+
+// Response (200 OK):
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": null,
+  "expirationTimeMinutes": null
 }
 ```
 
@@ -964,6 +1067,7 @@ hold_a1b2c3d4
 | Optimization | Problem | Solution | Code evidence | Measured result |
 |---|---|---|---|---|
 | Request deduplication / idempotency | Duplicate appointment creation could happen when payment webhooks retried | `PaymentEventListener` checks `findByPaymentId()` before booking | `PaymentEventListener.java` | TBD (no benchmark recorded) |
+| S3 Direct Uploads (Presigned URLs) | Routing heavy file transfers through the Java backend consumes JVM thread pool and memory | Use presigned PUT URLs to upload binaries directly from client to S3, bypassing backend | `AwsS3Service.java`, `AwsS3Config.java` | TBD |
 | Payment hold reservation | Slot could be double-booked during payment latency | `AppointmentHold` reserves slot for 15 minutes before final booking | `AppointmentService.java`, `AppointmentHold.java` | TBD |
 | N+1 query avoidance | Appointment and session lookups can trigger repeated lazy loads | `root.fetch(...)`, `query.distinct(true)`, and `@EntityGraph` | `AppointmentSpecifications.java`, `AppointmentRepository.java`, `VideoCallSessionsRepository.java` | TBD |
 | Pagination | Large appointment/payment lists can be expensive | `Pageable`, `PagedResourcesAssembler`, and `JpaSpecificationExecutor` | Controllers + repositories | TBD |
@@ -1093,6 +1197,7 @@ hold_a1b2c3d4
 | `src/main/java/com/ashwani/HealthCare/Controllers/AvailabilityController.java` | Availability APIs | Set/get/delete doctor availability | Principal + `AvailabilityRequestDto` list | None | `doctoravailability` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Controllers/PaymentController.java` | Payment APIs | Initiate, webhook, status, debug, paginated list | `PaymentRequest`, webhook headers | None | `payments` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Controllers/VideoCallController.java` | Telemedicine APIs | Create/get session, token, end, webhook | appointment/user query params | None | `video_call_sessions`, `video_call_events`, `twilio_webhook_events` | N/A |
+| `src/main/java/com/ashwani/HealthCare/Config/AwsS3Config.java` | AWS S3 configuration | Configures the S3 client and S3Presigner for presigned URLs | S3 credentials | None | None | N/A |
 | `src/main/java/com/ashwani/HealthCare/Config/SecurityConfig.java` | Spring Security setup | CORS, stateless auth, endpoint authorization | CORS env var | None | None | N/A |
 | `src/main/java/com/ashwani/HealthCare/Config/CashfreeConfig.java` | Cashfree SDK bean | Validates app ID/secret, environment selection | `cashfree.*` props | Mutable local config vars during bean init | None | N/A |
 | `src/main/java/com/ashwani/HealthCare/Config/RabbitMQConfig.java` | RabbitMQ bean setup | JSON converter, RabbitAdmin, listener factory | ConnectionFactory | None | Queue broker | N/A |
@@ -1103,6 +1208,7 @@ hold_a1b2c3d4
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/AuthService.java` | Auth business logic | Register/login for both roles | Entity objects + login strings | None | `patients`, `doctors` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/MfaService.java` | TOTP business logic | Secret generation, QR generation, enable/disable, verify | `userId`, `userType`, TOTP DTOs | None | `patients`, `doctors` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/PasswordResetService.java` | Reset token workflow | Request reset, reset password, hourly cleanup | Reset DTOs | None | `password_reset_tokens` | N/A |
+| `src/main/java/com/ashwani/HealthCare/Service/AwsS3Service.java` | S3 URL generation | Generates presigned S3 upload URLs for profile images | Doctor/Patient IDs | None | None | N/A |
 | `src/main/java/com/ashwani/HealthCare/Service/Doctor/DoctorService.java` | Doctor profile/query logic | Search/filter/update/profile lookup | Query strings, gender enum | None | `doctors` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Service/Patient/PatientService.java` | Patient profile logic | Update patient profile | Update request DTO | None | `patients` | N/A |
 | `src/main/java/com/ashwani/HealthCare/Service/Availability/AvailabilityService.java` | Availability logic | Save, fetch, delete slots | Request DTO list | None | `doctoravailability` | N/A |
@@ -1125,8 +1231,9 @@ hold_a1b2c3d4
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/AuthService.java` | Authentication and registration | `registerPatient(Patient): String`; `loginPatient(String,String): AuthResponse`; `registerDoctor(Doctor): String`; `loginDoctor(String,String): AuthResponse`; `loginPatientWithTotp(String,String): AuthResponse`; `loginDoctorWithTotp(String,String): AuthResponse` | None | Builds `AuthResponse` and JWTs |
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/MfaService.java` | TOTP setup and verification | `setupTotpByUserId(Long,String): TotpSetupResponse`; `confirmTotpByUserId(Long,String,String,String): MfaResponse`; `disableTotpByUserId(Long,String): MfaResponse`; `verifyTotpCode(String,String,String): boolean` | None | Returns QR data URI and `MfaResponse` |
 | `src/main/java/com/ashwani/HealthCare/Service/Auth/PasswordResetService.java` | Reset token lifecycle | `requestPatientPasswordReset(PasswordResetRequestDTO): String`; `requestDoctorPasswordReset(PasswordResetRequestDTO): String`; `resetPassword(PasswordResetDTO): String`; `cleanupExpiredTokens(): void` | None | None |
-| `src/main/java/com/ashwani/HealthCare/Service/Doctor/DoctorService.java` | Doctor search and profile updates | `searchDoctors(String,String,Gender): List<DoctorDto>`; `updateDoctorProfile(Long,DoctorProfileUpdateRequest): DoctorProfile`; `getDoctorProfileById(Long): DoctorProfileById` | None | `convertToDto(Doctor)`, `DoctorProfileById` construction |
-| `src/main/java/com/ashwani/HealthCare/Service/Patient/PatientService.java` | Patient profile updates | `updatePatientProfile(Long,PatientProfileUpdateRequest): PatientProfile` | None | `ModelMapper` to `PatientProfile` |
+| `src/main/java/com/ashwani/HealthCare/Service/AwsS3Service.java` | S3 URL generation | `generateDoctorProfileImagePresignedUrl(Long): PresignedUrlResponse`; `generatePatientProfileImagePresignedUrl(Long): PresignedUrlResponse`; `generateS3ObjectKey(String,Long,String): String` | None | None |
+| `src/main/java/com/ashwani/HealthCare/Service/Doctor/DoctorService.java` | Doctor search and profile updates | `searchDoctors(String,String,Gender): List<DoctorDto>`; `updateDoctorProfile(Long,DoctorProfileUpdateRequest): DoctorProfile`; `patchDoctorProfileImage(Long,DoctorProfilePatchRequest): DoctorProfileImagePatchResponse`; `getDoctorProfileById(Long): DoctorProfileById` | None | `convertToDto(Doctor)`, `DoctorProfileById` construction |
+| `src/main/java/com/ashwani/HealthCare/Service/Patient/PatientService.java` | Patient profile updates | `updatePatientProfile(Long,PatientProfileUpdateRequest): PatientProfile`; `patchPatientProfileImage(Long,PatientProfilePatchRequest): PatientProfileImagePatchResponse` | None | `ModelMapper` to `PatientProfile` |
 | `src/main/java/com/ashwani/HealthCare/Service/Availability/AvailabilityService.java` | Availability persistence | `getDoctorAvailability(Long): List<AvailabilityResponseDto>`; `setAvailability(Long,List<AvailabilityRequestDto>): List<AvailabilityResponseDto>`; `deleteAvailabilitySlot(Long,Long): void` | None | `convertToResponse(DoctorAvailability)` |
 | `src/main/java/com/ashwani/HealthCare/Service/Appointment/AppointmentService.java` | Appointment workflow | `createAppointmentHold(...)`; `bookAppointment(...)`; `getPatientAppointments(...)`; `getDoctorAppointments(...)`; `getAvailableSlots(...)`; `cancelAppointment(...)`; `updateAppointment(...)` | None | `convertToResponse(Appointment)`, `processAppointmentPage(...)` |
 | `src/main/java/com/ashwani/HealthCare/Service/Communication/EmailService.java` | Email delivery | `sendAppointmentConfirmation(...)`; `sendPasswordResetEmail(...)` | None | Thymeleaf `Context` rendering, join-link generation |
@@ -1189,10 +1296,8 @@ docker run -d --name rabbitmq \
 | `RABBITMQ_URL` | AMQP URL for RabbitMQ |
 | `RABBITMQ_USERNAME` | RabbitMQ username |
 | `RABBITMQ_PASSWORD` | RabbitMQ password |
-| `EMAIL_ID` | SMTP sender username |
-| `EMAIL_PASSWORD` | SMTP password/app password |
-| `SENDGRID_USERNAME` | Production SMTP username (SendGrid) |
-| `SENDGRID_API_KEY` | Production SMTP password (SendGrid API key) |
+| `MAIL_FROM_DO_NOT_REPLY` | One-way "From" email address for sending transactional messages |
+| `MAIL_SUPPORT` | Support email address |
 | `JWT_SECRET` | JWT signing secret |
 | `CASHFREE_ENV` | `SANDBOX` or `PRODUCTION` |
 | `APP_ID` | Cashfree App ID |
@@ -1203,6 +1308,10 @@ docker run -d --name rabbitmq \
 | `TWILIO_AUTH_TOKEN` | Twilio auth token |
 | `TWILIO_API_KEY` | Twilio API key |
 | `TWILIO_API_SECRET` | Twilio API secret |
+| `AWS_ACCESS_KEY_ID` | AWS access key ID |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key |
+| `AWS_S3_BUCKET_NAME` | AWS S3 bucket name |
+| `AWS_REGION` | AWS region (e.g. ap-south-1) |
 | `CORS_ALLOWED_ORIGINS` | Allowed browser origins |
 | `SPRING_PROFILES_ACTIVE` | Active Spring profile |
 | `SPRING_PROFILE` | Docker compose helper profile variable |
@@ -1262,6 +1371,7 @@ mvn clean package
 | `docker-compose.yml` | App + RabbitMQ local orchestration |
 | `env.example` | Environment-variable template |
 | `src/main/java/com/ashwani/HealthCare/HealthCareApplication.java` | Spring Boot entrypoint |
+| `src/main/java/com/ashwani/HealthCare/Config/AwsS3Config.java` | AWS S3 configuration |
 | `src/main/java/com/ashwani/HealthCare/Config/AuditingConfig.java` | JPA auditing configuration |
 | `src/main/java/com/ashwani/HealthCare/Config/CashfreeConfig.java` | Cashfree SDK bean configuration |
 | `src/main/java/com/ashwani/HealthCare/Config/FilterConfig.java` | BCrypt, ModelMapper, RestTemplate, ObjectMapper beans |
@@ -1276,13 +1386,18 @@ mvn clean package
 | `src/main/java/com/ashwani/HealthCare/Controllers/PatientController.java` | Patient profile endpoints |
 | `src/main/java/com/ashwani/HealthCare/Controllers/PaymentController.java` | Payment and webhook endpoints |
 | `src/main/java/com/ashwani/HealthCare/Controllers/VideoCallController.java` | Twilio session/token/webhook endpoints |
-| `src/main/java/com/ashwani/HealthCare/DTO/**` | API request/response contracts and events |
+| `src/main/java/com/ashwani/HealthCare/DTO/Doctor/DoctorProfileImagePatchResponse.java` | DTO for doctor profile image response |
+| `src/main/java/com/ashwani/HealthCare/DTO/Doctor/DoctorProfilePatchRequest.java` | DTO for doctor profile image request |
+| `src/main/java/com/ashwani/HealthCare/DTO/Patient/PatientProfileImagePatchResponse.java` | DTO for patient profile image response |
+| `src/main/java/com/ashwani/HealthCare/DTO/Patient/PatientProfilePatchRequest.java` | DTO for patient profile image request |
+| `src/main/java/com/ashwani/HealthCare/DTO/**` | Other API request/response contracts and events |
 | `src/main/java/com/ashwani/HealthCare/Entity/**` | Persisted domain and workflow state |
 | `src/main/java/com/ashwani/HealthCare/Enums/**` | Domain enums for status, gender, and login method |
 | `src/main/java/com/ashwani/HealthCare/ExceptionHandlers/GlobalExceptionHandler.java` | Central error mapping to JSON |
 | `src/main/java/com/ashwani/HealthCare/Filter/JwtFilter.java` | JWT request authentication filter |
 | `src/main/java/com/ashwani/HealthCare/Repository/**` | Spring Data repositories and custom queries |
-| `src/main/java/com/ashwani/HealthCare/Service/**` | Business logic, integration, and event handling |
+| `src/main/java/com/ashwani/HealthCare/Service/AwsS3Service.java` | AWS S3 service (presigned URL generation) |
+| `src/main/java/com/ashwani/HealthCare/Service/**` | Business logic, integrations, and event handling |
 | `src/main/java/com/ashwani/HealthCare/Utility/JWTUtility.java` | JWT generation and validation helper |
 | `src/main/java/com/ashwani/HealthCare/Utility/TimeSlot.java` | Available-slot value object |
 | `src/main/java/com/ashwani/HealthCare/specifications/**` | Dynamic query predicates |
@@ -1295,115 +1410,5 @@ mvn clean package
 | `src/main/resources/templates/email/password-reset.html` | Password reset email |
 | `src/test/java/com/ashwani/HealthCare/HealthCareApplicationTests.java` | Spring context smoke test |
 | `docs/project_context.md` | This authoritative project context document |
-
-## 14. Refactoring / Migration History
-
-### 2025 Q4 — Containerization, Payments, Email, and Configuration Hardening
-**Motivation:** Move the backend toward deployable environments, align payment flows with webhooks, and separate profile-specific configuration.
-
-**Before / after metrics:**
-- Before: single-path configuration and weaker environment separation.
-- After: `application.properties` plus `dev` / `docker` / `prod` profile overrides; `Dockerfile` and `docker-compose.yml` added; payment and email flows became profile-driven.
-- Exact latency / throughput change: TBD (no benchmark report found).
-
-**Files touched (evidence from docs/history):**
-- `Dockerfile`
-- `docker-compose.yml`
-- `env.example`
-- `src/main/resources/application*.properties`
-- `Service/Payment/*`
-- `Service/Communication/EmailService.java`
-- `Controllers/PaymentController.java`
-- `README.md`, `DEPLOYMENT_GUIDE.md`, `PAYMENT_API_GUIDE.md`
-
-**Lessons learned:**
-- Profile-based configuration reduced environment drift.
-- Webhooks need explicit debug and validation modes during gateway onboarding.
-- Email content should be template-driven rather than hard-coded.
-
-### 2026 Q1 — Auth Refactor, TOTP, Idempotency, and Exception Restructuring
-**Motivation:** Strengthen authentication, introduce MFA, make booking safer under webhook retries, and centralize error handling.
-
-**Before / after metrics:**
-- Before: password-only auth, less structured exception handling, direct booking flow, and weaker retry safety.
-- After: TOTP flows, `GlobalExceptionHandler`, hold-based booking, and `PaymentEventListener` idempotency check.
-- Exact before/after line delta: TBD.
-- Measurable code shape today: 8 controllers, 15 services, 10 entities, 10 repositories, 24 DTOs.
-
-**Files touched (evidence from commit history and current code):**
-- `Controllers/AuthController.java`
-- `Controllers/MfaController.java`
-- `Service/Auth/AuthService.java`
-- `Service/Auth/MfaService.java`
-- `Service/Auth/PasswordResetService.java`
-- `ExceptionHandlers/GlobalExceptionHandler.java`
-- `Service/Appointment/AppointmentService.java`
-- `Service/Payment/Event/PaymentEventListener.java`
-- `Controllers/DoctorController.java`
-- `DTO/Doctor/DoctorProfile.java`
-- `Entity/Patient.java`, `Entity/Doctor.java`
-
-**Lessons learned:**
-- Appointment creation must be idempotent when webhooks retry.
-- MFA state belongs in the user entity and must update the login method explicitly.
-- Centralized error mapping is easier to maintain than controller-local `try/catch` blocks.
-
-### 2026 Q1 — Appointment Filtering, Rescheduling, and Metadata
-**Motivation:** Make appointment retrieval scalable and add richer querying around dates, times, and status.
-
-**Before / after metrics:**
-- Before: simpler appointment queries with less filtering.
-- After: date-range and time-range specification predicates, pagination, and fetch-join optimization.
-- Exact latency change: TBD.
-
-**Files touched:**
-- `specifications/AppointmentSpecifications.java`
-- `Controllers/AppointmentController.java`
-- `Service/Appointment/AppointmentService.java`
-- `Entity/Appointment.java`
-- `Config/AuditingConfig.java`
-- `application*.properties`
-
-**Lessons learned:**
-- Pagination plus fetch joins prevents the appointment list endpoints from becoming N+1-heavy.
-- Auditing metadata should be consistent across entities to support troubleshooting.
-
-### 2026 Q1 — Doctor Search / Filter and Profile Enrichment
-**Motivation:** Improve discoverability of doctors and expose richer profile metadata.
-
-**Before / after metrics:**
-- Before: more limited doctor lookup.
-- After: `search` and `filter` endpoints, plus `totpEnabled` exposure in doctor profile DTOs.
-- Exact search-performance numbers: TBD.
-
-**Files touched:**
-- `Controllers/DoctorController.java`
-- `Service/Doctor/DoctorService.java`
-- `specifications/DoctorSpecifications.java`
-- `DTO/Doctor/*`
-
-**Lessons learned:**
-- Search and filter logic is easier to maintain when expressed as JPA Specifications.
-- Profile DTOs should be explicit about security-relevant flags like TOTP status.
-
-### 2026 Q1 — Documentation Alignment
-**Motivation:** Bring docs closer to the actual codebase after endpoint and profile changes.
-
-**Before / after metrics:**
-- Before: endpoint and enum examples in docs drifted from code.
-- After: documentation index, API guide, and deployment guide were updated, though some drift remains.
-- Exact doc-line reductions or rewrite metrics: TBD.
-
-**Files touched:**
-- `README.md`
-- `DOCUMENTATION_INDEX.md`
-- `API_DOCUMENTATION.md`
-- `DEPLOYMENT_GUIDE.md`
-- `DEVELOPER_GUIDE.md`
-- `CHANGELOG.md`
-
-**Lessons learned:**
-- API docs must be regenerated or manually checked after auth or enum changes.
-- A dedicated project-context document reduces future drift.
 
 

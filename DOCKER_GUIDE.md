@@ -37,9 +37,9 @@ SPRING_PROFILE=docker
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production-min-256-bits
 
-# Email Configuration (Gmail example)
-EMAIL_ID=your-email@gmail.com
-EMAIL_PASSWORD=your-app-specific-password
+# Email Configuration (AWS SES)
+MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+MAIL_SUPPORT=support@yourdomain.com
 
 # Twilio Configuration (for video calling)
 TWILIO_ACCOUNT_SID=your-twilio-account-sid
@@ -289,8 +289,12 @@ All configurable environment variables:
 | `TWILIO_API_KEY` | Twilio API Key | - | No |
 | `TWILIO_API_SECRET` | Twilio API Secret | - | No |
 | `JWT_SECRET` | JWT signing secret | - | Yes |
-| `EMAIL_ID` | Email address for sending emails | - | Yes |
-| `EMAIL_PASSWORD` | Email password/app password | - | Yes |
+| `MAIL_FROM_DO_NOT_REPLY` | One-way email address for sending transactional messages | `do-not-reply@yourdomain.com` | Yes |
+| `MAIL_SUPPORT` | Support email address | `support@yourdomain.com` | Yes |
+| `AWS_ACCESS_KEY_ID` | AWS IAM access key ID | - | Yes |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret access key | - | Yes |
+| `AWS_REGION` | AWS region (e.g., ap-south-1) | `ap-south-1` | Yes |
+| `AWS_S3_BUCKET_NAME` | AWS S3 bucket for uploads | - | Yes |
 | `APP_ID` | Cashfree App ID | - | Yes |
 | `SECRET_KEY` | Cashfree Secret Key | - | Yes |
 | `FRONTEND_BASE_URL` | Frontend application URL | `http://localhost:5173` | No |

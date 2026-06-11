@@ -76,8 +76,8 @@ JWT_SECRET=your_jwt_secret_key
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES=60
 
 # Email
-EMAIL_ID=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
+MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+MAIL_SUPPORT=support@yourdomain.com
 
 # Twilio
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
@@ -273,10 +273,8 @@ jwt.expiration.ms=${JWT_EXPIRATION_MS}
 password.reset.token.expiry.minutes=60
 
 # Email
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=${EMAIL_ID}
-spring.mail.password=${EMAIL_PASSWORD}
+mail.from.do-not-reply=${MAIL_FROM_DO_NOT_REPLY}
+mail.support=${MAIL_SUPPORT}
 
 # Payment
 cashfree.env=SANDBOX
@@ -441,9 +439,9 @@ Solution:
 ```
 Error: Failed to send email
 Solution:
-1. Check EMAIL_ID and EMAIL_PASSWORD
-2. Verify SMTP settings
-3. Check if 2FA is enabled (use app password)
+1. Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION environment variables
+2. Verify MAIL_FROM_DO_NOT_REPLY and MAIL_SUPPORT configurations
+3. Verify that the MAIL_FROM_DO_NOT_REPLY email address is verified in AWS SES
 4. Verify email template configuration
 ```
 

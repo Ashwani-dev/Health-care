@@ -54,7 +54,8 @@ public class SecurityConfig {
                                 "/api/auth/login/password",
                                 "/api/auth/login/totp",
                                 "/api/video-call/webhook",
-                                "/api/payments/webhook/**"
+                                "/api/payments/webhook/**",
+                                "/api/support/message"
                         ).permitAll()
 
                         // Role-based access

@@ -157,6 +157,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic Spring Boot application
 - PostgreSQL database setup
 
+## Quarterly Refactoring & Migration History
+
+### 2025 Q4 — Containerization, Payments, Email, and Configuration Hardening
+**Motivation:** Move the backend toward deployable environments, align payment flows with webhooks, and separate profile-specific configuration.
+
+**Before / after metrics:**
+- Before: single-path configuration and weaker environment separation.
+- After: `application.properties` plus `dev` / `docker` / `prod` profile overrides; `Dockerfile` and `docker-compose.yml` added; payment and email flows became profile-driven.
+- Exact latency / throughput change: TBD (no benchmark report found).
+
+**Files touched:**
+- `Dockerfile`
+- `docker-compose.yml`
+- `env.example`
+- `src/main/resources/application*.properties`
+- `Service/Payment/*`
+- `Service/Communication/EmailService.java`
+- `Controllers/PaymentController.java`
+- `README.md`, `DEPLOYMENT_GUIDE.md`, `PAYMENT_API_GUIDE.md`
+
+**Lessons learned:**
+- Profile-based configuration reduced environment drift.
+- Webhooks need explicit debug and validation modes during gateway onboarding.
+- Email content should be template-driven rather than hard-coded.
+
+### 2026 Q1 — Auth Refactor, TOTP, Idempotency, and Exception Restructuring
+**Motivation:** Strengthen authentication, introduce MFA, make booking safer under webhook retries, and centralize error handling.
+
+**Before / after metrics:**
+- Before: password-only auth, less structured exception handling, direct booking flow, and weaker retry safety.
+- After: TOTP flows, `GlobalExceptionHandler`, hold-based booking, and `PaymentEventListener` idempotency check.
+- Exact before/after line delta: TBD.
+- Measurable code shape today: 8 controllers, 15 services, 10 entities, 10 repositories, 24 DTOs.
+
+**Files touched:**
+- `Controllers/AuthController.java`
+- `Controllers/MfaController.java`
+- `Service/Auth/AuthService.java`
+- `Service/Auth/MfaService.java`
+- `Service/Auth/PasswordResetService.java`
+- `ExceptionHandlers/GlobalExceptionHandler.java`
+- `Service/Appointment/AppointmentService.java`
+- `Service/Payment/Event/PaymentEventListener.java`
+- `Controllers/DoctorController.java`
+- `DTO/Doctor/DoctorProfile.java`
+- `Entity/Patient.java`, `Entity/Doctor.java`
+
+**Lessons learned:**
+- Appointment creation must be idempotent when webhooks retry.
+- MFA state belongs in the user entity and must update the login method explicitly.
+- Centralized error mapping is easier to maintain than controller-local `try/catch` blocks.
+
+### 2026 Q1 — Appointment Filtering, Rescheduling, and Metadata
+**Motivation:** Make appointment retrieval scalable and add richer querying around dates, times, and status.
+
+**Before / after metrics:**
+- Before: simpler appointment queries with less filtering.
+- After: date-range and time-range specification predicates, pagination, and fetch-join optimization.
+- Exact latency change: TBD.
+
+**Files touched:**
+- `specifications/AppointmentSpecifications.java`
+- `Controllers/AppointmentController.java`
+- `Service/Appointment/AppointmentService.java`
+- `Entity/Appointment.java`
+- `Config/AuditingConfig.java`
+- `application*.properties`
+
+**Lessons learned:**
+- Pagination plus fetch joins prevents the appointment list endpoints from becoming N+1-heavy.
+- Auditing metadata should be consistent across entities to support troubleshooting.
+
+### 2026 Q1 — Doctor Search / Filter and Profile Enrichment
+**Motivation:** Improve discoverability of doctors and expose richer profile metadata.
+
+**Before / after metrics:**
+- Before: more limited doctor lookup.
+- After: `search` and `filter` endpoints, plus `totpEnabled` exposure in doctor profile DTOs.
+- Exact search-performance numbers: TBD.
+
+**Files touched:**
+- `Controllers/DoctorController.java`
+- `Service/Doctor/DoctorService.java`
+- `specifications/DoctorSpecifications.java`
+- `DTO/Doctor/*`
+
+**Lessons learned:**
+- Search and filter logic is easier to maintain when expressed as JPA Specifications.
+- Profile DTOs should be explicit about security-relevant flags like TOTP status.
+
+### 2026 Q1 — Documentation Alignment
+**Motivation:** Bring docs closer to the actual codebase after endpoint and profile changes.
+
+**Before / after metrics:**
+- Before: endpoint and enum examples in docs drifted from code.
+- After: documentation index, API guide, and deployment guide were updated, though some drift remains.
+- Exact doc-line reductions or rewrite metrics: TBD.
+
+**Files touched:**
+- `README.md`
+- `DOCUMENTATION_INDEX.md`
+- `API_DOCUMENTATION.md`
+- `DEPLOYMENT_GUIDE.md`
+- `DEVELOPER_GUIDE.md`
+- `CHANGELOG.md`
+
+**Lessons learned:**
+- API docs must be regenerated or manually checked after auth or enum changes.
+- A dedicated project-context document reduces future drift.
+
+### 2026 Q2 — AWS S3 Profile Image Upload and Presigned URLs Integration
+**Motivation:** Add support for uploading doctor and patient profile images securely and efficiently. By generating presigned S3 upload URLs, browser clients can upload binary data directly to S3. This avoids routing heavy file transfers through the Java backend application, saving memory and JVM resources.
+
+**Before / after metrics:**
+- Before: Profile images were not supported (or references were local placeholders in docs/DB).
+- After: Complete flow for requesting S3 presigned upload URLs, confirming uploads, and removing profile image paths. Database schemas, profile responses/requests, and service layers updated.
+- Exact performance latency delta: TBD.
+
+**Files touched:**
+- `src/main/java/com/ashwani/HealthCare/Config/AwsS3Config.java`
+- `src/main/java/com/ashwani/HealthCare/Service/AwsS3Service.java`
+- `src/main/java/com/ashwani/HealthCare/Controllers/DoctorController.java`
+- `src/main/java/com/ashwani/HealthCare/Controllers/PatientController.java`
+- `src/main/java/com/ashwani/HealthCare/Service/Doctor/DoctorService.java`
+- `src/main/java/com/ashwani/HealthCare/Service/Patient/PatientService.java`
+- `src/main/java/com/ashwani/HealthCare/DTO/Doctor/DoctorProfileImagePatchResponse.java`
+- `src/main/java/com/ashwani/HealthCare/DTO/Doctor/DoctorProfilePatchRequest.java`
+- `src/main/java/com/ashwani/HealthCare/DTO/Patient/PatientProfileImagePatchResponse.java`
+- `src/main/java/com/ashwani/HealthCare/DTO/Patient/PatientProfilePatchRequest.java`
+- `docker-compose.yml`, `env.example`, `pom.xml`, `application.properties`
+
+**Lessons learned:**
+- Offloading file uploads via S3 presigned URLs is much more performant than backend-mediated file uploading.
+- Using PATCH endpoints to request, confirm, and remove profile images allows clean RESTful operations.
+
 ---
 
 ## Version History Summary

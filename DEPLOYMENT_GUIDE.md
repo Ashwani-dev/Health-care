@@ -27,7 +27,7 @@ This guide covers deployment of the Healthcare Management System across differen
 ### Required Accounts
 - **Cashfree**: Payment gateway account
 - **Twilio**: Video calling service account
-- **Email Provider**: Gmail or other SMTP provider
+- **Email Provider**: AWS SES or other configured provider
 
 ---
 
@@ -68,9 +68,9 @@ DB_PASSWORD=your_password
 # JWT Configuration
 JWT_SECRET=your_super_secret_jwt_key_for_development_only
 
-# Email Configuration
-EMAIL_ID=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
+# Email Configuration (AWS SES)
+MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+MAIL_SUPPORT=support@yourdomain.com
 
 # Cashfree Configuration (Sandbox)
 APP_ID=test_app_id
@@ -156,8 +156,8 @@ services:
       - DB_USERNAME=healthcare_user
       - DB_PASSWORD=healthcare_password
       - JWT_SECRET=your_jwt_secret
-      - EMAIL_ID=${EMAIL_ID}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - MAIL_FROM_DO_NOT_REPLY=${MAIL_FROM_DO_NOT_REPLY}
+      - MAIL_SUPPORT=${MAIL_SUPPORT}
       - APP_ID=${APP_ID}
       - SECRET_KEY=${SECRET_KEY}
     depends_on:
@@ -232,8 +232,8 @@ export DATABASE_URL=jdbc:postgresql://your-rds-endpoint:5432/healthcare_db
 export DB_USERNAME=healthcare_user
 export DB_PASSWORD=secure_password
 export JWT_SECRET=your_production_jwt_secret
-export EMAIL_ID=your_email@gmail.com
-export EMAIL_PASSWORD=your_app_password
+export MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+export MAIL_SUPPORT=support@yourdomain.com
 export APP_ID=your_cashfree_app_id
 export SECRET_KEY=your_cashfree_secret_key
 ```
@@ -258,8 +258,8 @@ env_variables:
   DB_USERNAME: "healthcare_user"
   DB_PASSWORD: "secure_password"
   JWT_SECRET: "your_production_jwt_secret"
-  EMAIL_ID: "your_email@gmail.com"
-  EMAIL_PASSWORD: "your_app_password"
+  MAIL_FROM_DO_NOT_REPLY: "do-not-reply@yourdomain.com"
+  MAIL_SUPPORT: "support@yourdomain.com"
   APP_ID: "your_cashfree_app_id"
   SECRET_KEY: "your_cashfree_secret_key"
 ```
@@ -382,8 +382,8 @@ Environment=DATABASE_URL=jdbc:postgresql://localhost:5432/healthcare_db
 Environment=DB_USERNAME=healthcare_user
 Environment=DB_PASSWORD=secure_password
 Environment=JWT_SECRET=your_production_jwt_secret
-Environment=EMAIL_ID=your_email@gmail.com
-Environment=EMAIL_PASSWORD=your_app_password
+Environment=MAIL_FROM_DO_NOT_REPLY=do-not-reply@yourdomain.com
+Environment=MAIL_SUPPORT=support@yourdomain.com
 Environment=APP_ID=your_cashfree_app_id
 Environment=SECRET_KEY=your_cashfree_secret_key
 
@@ -501,8 +501,11 @@ export SPRING_PROFILES_ACTIVE=prod
 | `RABBITMQ_URL` | RabbitMQ connection URL | `amqp://host:5672` | All |
 | `RABBITMQ_USERNAME` | RabbitMQ username | `rabbitmq_user` | All |
 | `RABBITMQ_PASSWORD` | RabbitMQ password | `rabbitmq_password` | All |
-| `EMAIL_ID` | SMTP email address | `noreply@example.com` | All |
-| `EMAIL_PASSWORD` | SMTP password/app password | `app_password` | All |
+| `MAIL_FROM_DO_NOT_REPLY` | One-way email address for sending transactional messages | `do-not-reply@example.com` | All |
+| `MAIL_SUPPORT` | Support email address | `support@example.com` | All |
+| `AWS_ACCESS_KEY_ID` | AWS IAM access key ID | - | All |
+| `AWS_SECRET_ACCESS_KEY` | AWS IAM secret access key | - | All |
+| `AWS_REGION` | AWS region (e.g., ap-south-1) | `ap-south-1` | All |
 | `TWILIO_ACCOUNT_SID` | Twilio account SID | `ACxxxxxxxxxxxxx` | All |
 | `TWILIO_AUTH_TOKEN` | Twilio auth token | `token` | All |
 | `TWILIO_API_KEY` | Twilio API key | `key` | All |
@@ -534,8 +537,8 @@ JWT_SECRET=dev_jwt_secret_key
 RABBITMQ_URL=amqp://localhost:5672
 RABBITMQ_USERNAME=rabbitmq_user
 RABBITMQ_PASSWORD=rabbitmq_password
-EMAIL_ID=dev@example.com
-EMAIL_PASSWORD=dev_password
+MAIL_FROM_DO_NOT_REPLY=do-not-reply-dev@example.com
+MAIL_SUPPORT=support-dev@example.com
 APP_ID=test_app_id
 SECRET_KEY=test_secret_key
 FRONTEND_BASE_URL=http://localhost:5173
@@ -553,8 +556,8 @@ JWT_SECRET=prod_jwt_secret_256_bits_minimum
 RABBITMQ_URL=amqp://prod-rabbitmq:5672
 RABBITMQ_USERNAME=prod_rabbitmq_user
 RABBITMQ_PASSWORD=prod_rabbitmq_password
-EMAIL_ID=prod@example.com
-EMAIL_PASSWORD=prod_password
+MAIL_FROM_DO_NOT_REPLY=do-not-reply-prod@example.com
+MAIL_SUPPORT=support-prod@example.com
 APP_ID=prod_app_id
 SECRET_KEY=prod_secret_key
 FRONTEND_BASE_URL=https://app.example.com

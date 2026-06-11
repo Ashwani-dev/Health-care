@@ -664,22 +664,17 @@ Authorization: Bearer <jwt-token>
 ### Patch Doctor Profile Image
 **PATCH** `/api/doctor/profile`
 
-Update or remove the authenticated doctor's profile image URL. Requires authentication.
+Request S3 presigned upload URL, confirm S3 upload, or remove the doctor's profile image URL. Requires authentication.
 
 **Headers:**
 ```
 Authorization: Bearer <jwt-token>
 ```
 
+**Step 1: Request Presigned Upload URL**
+To request a temporary S3 URL to upload an image directly to S3:
+
 **Request Body:**
-```json
-{
-  "profileImageUrl": "/uploads/profile/doctor-1.jpg"
-}
-```
-
-To remove the stored image path, send:
-
 ```json
 {
   "profileImageUrl": null
@@ -689,16 +684,50 @@ To remove the stored image path, send:
 **Response (200 OK):**
 ```json
 {
-  "id": 1,
-  "name": "Dr. John Smith",
-  "email": "smith@example.com",
-  "phone": "+1234567890",
-  "specialization": "Cardiology",
-  "experience": 10,
-  "profileImageUrl": "/uploads/profile/doctor-1.jpg",
-  "consultationFee": 100.00,
-  "bio": "Updated bio information",
-  "address": "123 Medical Center Dr, City, State"
+  "presignedUploadUrl": "https://healthcare-images.s3.ap-south-1.amazonaws.com/profile-images/doctor/1/20260607011129-avatar.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&...",
+  "s3ObjectKey": "profile-images/doctor/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": 15
+}
+```
+
+**Step 2: Upload Image to S3**
+The client performs an HTTP `PUT` request containing the image binary directly to the `presignedUploadUrl`.
+
+**Step 3: Confirm Upload**
+After successful upload to S3, send the `s3ObjectKey` to save it in the database:
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "profile-images/doctor/1/20260607011129-avatar.jpg"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": "profile-images/doctor/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": null
+}
+```
+
+**Step 4: Remove Profile Image**
+To remove the stored profile image path and set it to null in the database:
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "remove"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": null,
+  "expirationTimeMinutes": null
 }
 ```
 
@@ -899,22 +928,17 @@ Authorization: Bearer <jwt-token>
 ### Patch Patient Profile Image
 **PATCH** `/api/patient/profile`
 
-Update or remove the authenticated patient's profile image URL. Requires authentication.
+Request S3 presigned upload URL, confirm S3 upload, or remove the patient's profile image URL. Requires authentication.
 
 **Headers:**
 ```
 Authorization: Bearer <jwt-token>
 ```
 
+**Step 1: Request Presigned Upload URL**
+To request a temporary S3 URL to upload an image directly to S3:
+
 **Request Body:**
-```json
-{
-  "profileImageUrl": "/uploads/profile/patient-1.jpg"
-}
-```
-
-To remove the stored image path, send:
-
 ```json
 {
   "profileImageUrl": null
@@ -924,15 +948,50 @@ To remove the stored image path, send:
 **Response (200 OK):**
 ```json
 {
-  "id": 1,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "+1234567890",
-  "dateOfBirth": "1990-01-01",
-  "gender": "MALE",
-  "address": "123 Main St, City, State",
-  "medicalHistory": "Updated medical history",
-  "profileImageUrl": "/uploads/profile/patient-1.jpg"
+  "presignedUploadUrl": "https://healthcare-images.s3.ap-south-1.amazonaws.com/profile-images/patient/1/20260607011129-avatar.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&...",
+  "s3ObjectKey": "profile-images/patient/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": 15
+}
+```
+
+**Step 2: Upload Image to S3**
+The client performs an HTTP `PUT` request containing the image binary directly to the `presignedUploadUrl`.
+
+**Step 3: Confirm Upload**
+After successful upload to S3, send the `s3ObjectKey` to save it in the database:
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "profile-images/patient/1/20260607011129-avatar.jpg"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": "profile-images/patient/1/20260607011129-avatar.jpg",
+  "expirationTimeMinutes": null
+}
+```
+
+**Step 4: Remove Profile Image**
+To remove the stored profile image path and set it to null in the database:
+
+**Request Body:**
+```json
+{
+  "profileImageUrl": "remove"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "presignedUploadUrl": null,
+  "s3ObjectKey": null,
+  "expirationTimeMinutes": null
 }
 ```
 
