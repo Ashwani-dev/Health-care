@@ -52,8 +52,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
 
       # Email Configuration
-      MAIL_FROM_DO_NOT_REPLY: ${MAIL_FROM_DO_NOT_REPLY}
-      MAIL_SUPPORT: ${MAIL_SUPPORT}
+      MAIL_FROM_DO_NOT_REPLY: ${MAIL_FROM_DO_NOT_REPLY:-do-not-reply@yourdomain.com}
+      MAIL_SUPPORT: ${MAIL_SUPPORT:-support@yourdomain.com}
 
       # Cashfree Configuration
       APP_ID: ${APP_ID}
