@@ -64,10 +64,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/doctor/profile").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.GET,"/api/doctor/**").hasAnyRole("DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.POST, "/api/availability/{doctorId}").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/availability/{doctorId}/{slotId}").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/availability/{doctorId}/{slotId}").hasRole("DOCTOR")
                         .requestMatchers("/api/availability/**").hasAnyRole("DOCTOR", "PATIENT")
-                        .requestMatchers(
-                                HttpMethod.DELETE, "/api/availability/{doctorId}/{slotId}"
-                        ).hasRole("DOCTOR")
 
                         // All other requests require authentication
                         .anyRequest().authenticated()

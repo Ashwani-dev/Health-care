@@ -217,6 +217,7 @@ For complete TOTP documentation, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.
 ### Availability Endpoints
 - `POST /api/availability/{doctorId}` - Set doctor availability
 - `GET /api/availability/{doctorId}` - Get doctor availability
+- `PUT /api/availability/{doctorId}/{slotId}` - Update availability slot
 - `DELETE /api/availability/{doctorId}/{slotId}` - Delete availability slot
 
 ### Payment Endpoints

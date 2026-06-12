@@ -803,7 +803,7 @@ Authorization: Bearer <jwt-token>
 ```json
 [
   {
-    "date": "2024-01-15",
+    "dayOfWeek": "MONDAY",
     "startTime": "09:00:00",
     "endTime": "17:00:00",
     "isAvailable": true
@@ -817,10 +817,12 @@ Authorization: Bearer <jwt-token>
   {
     "id": 1,
     "doctorId": 1,
-    "date": "2024-01-15",
+    "dayOfWeek": "MONDAY",
     "startTime": "09:00:00",
     "endTime": "17:00:00",
-    "isAvailable": true
+    "isAvailable": true,
+    "createdAt": "2026-06-13T02:08:31.445",
+    "updatedAt": "2026-06-13T02:08:31.445"
   }
 ]
 ```
@@ -836,12 +838,48 @@ Get availability slots for a doctor.
   {
     "id": 1,
     "doctorId": 1,
-    "date": "2024-01-15",
+    "dayOfWeek": "MONDAY",
     "startTime": "09:00:00",
     "endTime": "17:00:00",
-    "isAvailable": true
+    "isAvailable": true,
+    "createdAt": "2026-06-13T02:08:31.445",
+    "updatedAt": "2026-06-13T02:08:31.445"
   }
 ]
+```
+
+### Update Availability Slot
+**PUT** `/api/availability/{doctorId}/{slotId}`
+
+Update a specific availability slot. Requires authentication and doctor must be updating their own slot.
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Request Body:**
+```json
+{
+  "dayOfWeek": "TUESDAY",
+  "startTime": "10:00:00",
+  "endTime": "16:00:00",
+  "isAvailable": false
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "doctorId": 1,
+  "dayOfWeek": "TUESDAY",
+  "startTime": "10:00:00",
+  "endTime": "16:00:00",
+  "isAvailable": false,
+  "createdAt": "2026-06-13T02:08:31.445",
+  "updatedAt": "2026-06-13T02:08:31.445"
+}
 ```
 
 ### Delete Availability Slot
@@ -854,9 +892,9 @@ Delete a specific availability slot. Requires authentication and doctor must be 
 Authorization: Bearer <jwt-token>
 ```
 
-**Response (204 No Content):**
+**Response (200 OK):**
 ```
-(Empty response body)
+Success: Availability slot 1 deleted successfully
 ```
 
 ---

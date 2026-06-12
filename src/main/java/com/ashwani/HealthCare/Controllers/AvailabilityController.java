@@ -4,11 +4,10 @@ import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityRequestDto;
 import com.ashwani.HealthCare.DTO.DoctorAvailability.AvailabilityResponseDto;
 import com.ashwani.HealthCare.Service.Availability.AvailabilityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.util.List;
 
@@ -25,13 +24,12 @@ public class AvailabilityController {
      * @param requests List of availability requests to set
      * @param principal Current authenticated user (doctor)
      * @return List of created/updated availability slots
-     * @throws AccessDeniedException if a doctor tries to modify another doctor's availability
      */
     public ResponseEntity<List<AvailabilityResponseDto>> setAvailability(
             @PathVariable Long doctorId,
             @RequestBody List<AvailabilityRequestDto> requests,
             Principal principal
-    ) throws AccessDeniedException {
+    ) {
         // Verify doctor is updating their own availability
         if(!principal.getName().equals(doctorId.toString())){
             throw new AccessDeniedException("You can only update your own availability");
@@ -59,25 +57,41 @@ public class AvailabilityController {
      * @param doctorId Doctor's ID
      * @param slotId Slot ID to delete
      * @param principal Current authenticated user (doctor)
-     * @return 204 No Content on success
-     * @throws AccessDeniedException if a doctor tries to delete another doctor's slot
+     * @return Success message on success
      */
     public ResponseEntity<String> deleteAvailabilitySlot(
             @PathVariable Long doctorId,
             @PathVariable Long slotId,
-            Principal principal) throws AccessDeniedException {
+            Principal principal) {
 
         if (!principal.getName().equals(doctorId.toString())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Error: You can only delete your own availability slots");
+            throw new AccessDeniedException("You can only delete your own availability slots");
         }
 
-        try {
-            availabilityService.deleteAvailabilitySlot(doctorId, slotId);
-            return ResponseEntity.ok("Success: Availability slot " + slotId + " deleted successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Error: " + e.getMessage());
+        availabilityService.deleteAvailabilitySlot(doctorId, slotId);
+        return ResponseEntity.ok("Success: Availability slot " + slotId + " deleted successfully");
+    }
+
+    @PutMapping("/{doctorId}/{slotId}")
+    /**
+     * Update a specific availability slot for a doctor
+     * @param doctorId Doctor's ID
+     * @param slotId Slot ID to update
+     * @param request Updated availability details
+     * @param principal Current authenticated user (doctor)
+     * @return Updated availability slot details
+     */
+    public ResponseEntity<AvailabilityResponseDto> updateAvailabilitySlot(
+            @PathVariable Long doctorId,
+            @PathVariable Long slotId,
+            @RequestBody AvailabilityRequestDto request,
+            Principal principal) {
+
+        if (!principal.getName().equals(doctorId.toString())) {
+            throw new AccessDeniedException("You can only update your own availability slots");
         }
+
+        AvailabilityResponseDto updatedSlot = availabilityService.updateAvailabilitySlot(doctorId, slotId, request);
+        return ResponseEntity.ok(updatedSlot);
     }
 }
