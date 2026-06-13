@@ -83,12 +83,18 @@ public class AuthController {
             throw new RuntimeException("Invalid user type. Must be PATIENT or DOCTOR");
         }
 
+        // Determine secure flag: must be true if we use SameSite=None (even in local development, 
+        // unless you run local backend over HTTP, in which case dev should remain Lax)
+        boolean isDev = env.acceptsProfiles(Profiles.of("dev"));
+        String sameSiteMode = isDev ? "Lax" : "None";
+        boolean secureFlag = !isDev; // SameSite=None requires Secure=true
+
         ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", serviceResponse.token())
-                .httpOnly(true)                             // Blocks Javascript access (blocks XSS)
-                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
-                .path("/")                                  // Available across all application routes
-                .maxAge(Duration.ofMillis(expirationMs))    // Expiry matching JWT (24 hours in seconds)
-                .sameSite("Lax")                            // Lax protects against CSRF while allowing navigation redirection
+                .httpOnly(true)
+                .secure(secureFlag)
+                .path("/")
+                .maxAge(Duration.ofMillis(expirationMs))
+                .sameSite(sameSiteMode) // Set to "None" in production for cross-site cookie support
                 .build();
 
         return ResponseEntity.ok()
@@ -117,12 +123,18 @@ public class AuthController {
             throw new RuntimeException("Invalid user type. Must be PATIENT or DOCTOR");
         }
 
+        // Determine secure flag: must be true if we use SameSite=None (even in local development, 
+        // unless you run local backend over HTTP, in which case dev should remain Lax)
+        boolean isDev = env.acceptsProfiles(Profiles.of("dev"));
+        String sameSiteMode = isDev ? "Lax" : "None";
+        boolean secureFlag = !isDev; // SameSite=None requires Secure=true
+
         ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", serviceResponse.token())
-                .httpOnly(true)                             // Blocks Javascript access (blocks XSS)
-                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
-                .path("/")                                  // Available across all application routes
-                .maxAge(Duration.ofMillis(expirationMs))    // Expiry matching JWT (24 hours in seconds)
-                .sameSite("Lax")                            // Lax protects against CSRF while allowing navigation redirection
+                .httpOnly(true)
+                .secure(secureFlag)
+                .path("/")
+                .maxAge(Duration.ofMillis(expirationMs))
+                .sameSite(sameSiteMode) // Set to "None" in production for cross-site cookie support
                 .build();
 
         return ResponseEntity.ok()
@@ -136,12 +148,18 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout() {
+        // Determine secure flag: must be true if we use SameSite=None (even in local development, 
+        // unless you run local backend over HTTP, in which case dev should remain Lax)
+        boolean isDev = env.acceptsProfiles(Profiles.of("dev"));
+        String sameSiteMode = isDev ? "Lax" : "None";
+        boolean secureFlag = !isDev; // SameSite=None requires Secure=true
+
         ResponseCookie deleteCookie = ResponseCookie.from("jwtToken", "")
                 .httpOnly(true)
-                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
+                .secure(secureFlag)
                 .path("/")
                 .maxAge(0) // 0 tells the browser to immediately delete the cookie
-                .sameSite("Lax")
+                .sameSite(sameSiteMode)
                 .build();
 
         return ResponseEntity.ok()
