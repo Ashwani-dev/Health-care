@@ -1,6 +1,8 @@
 package com.ashwani.HealthCare.Controllers;
 
 import com.ashwani.HealthCare.DTO.Authentication.AuthResponse;
+import com.ashwani.HealthCare.DTO.Authentication.ServiceAuthResponse;
+import java.util.Map;
 import com.ashwani.HealthCare.DTO.Authentication.PasswordLoginRequest;
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetDTO;
 import com.ashwani.HealthCare.DTO.Authentication.PasswordResetRequestDTO;
@@ -10,18 +12,30 @@ import com.ashwani.HealthCare.Entity.Patient;
 import com.ashwani.HealthCare.Service.Auth.AuthService;
 import com.ashwani.HealthCare.Service.Auth.PasswordResetService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 @RestController
 @RequestMapping("api/auth")
 public class AuthController {
+    @Value("${jwt.expiration.ms}")
+    private int expirationMs;
+
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final Environment env;
 
-    public AuthController(AuthService authService, PasswordResetService passwordResetService){
+    public AuthController(AuthService authService, PasswordResetService passwordResetService, Environment env){
         this.authService = authService;
         this.passwordResetService = passwordResetService;
+        this.env = env;
     }
 
     /**
@@ -60,16 +74,26 @@ public class AuthController {
             @Valid @RequestBody PasswordLoginRequest loginRequest,
             @RequestParam String userType) {
 
-        AuthResponse response;
+        ServiceAuthResponse serviceResponse;
         if ("PATIENT".equalsIgnoreCase(userType)) {
-            response = authService.loginPatient(loginRequest.email(), loginRequest.password());
+            serviceResponse = authService.loginPatient(loginRequest.email(), loginRequest.password());
         } else if ("DOCTOR".equalsIgnoreCase(userType)) {
-            response = authService.loginDoctor(loginRequest.email(), loginRequest.password());
+            serviceResponse = authService.loginDoctor(loginRequest.email(), loginRequest.password());
         } else {
             throw new RuntimeException("Invalid user type. Must be PATIENT or DOCTOR");
         }
 
-        return ResponseEntity.ok(response);
+        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", serviceResponse.token())
+                .httpOnly(true)                             // Blocks Javascript access (blocks XSS)
+                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
+                .path("/")                                  // Available across all application routes
+                .maxAge(Duration.ofMillis(expirationMs))    // Expiry matching JWT (24 hours in seconds)
+                .sameSite("Lax")                            // Lax protects against CSRF while allowing navigation redirection
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(serviceResponse.authResponse());
     }
 
     /**
@@ -84,16 +108,45 @@ public class AuthController {
             @Valid @RequestBody TotpLoginRequest loginRequest,
             @RequestParam String userType) {
 
-        AuthResponse response;
+        ServiceAuthResponse serviceResponse;
         if ("PATIENT".equalsIgnoreCase(userType)) {
-            response = authService.loginPatientWithTotp(loginRequest.email(), loginRequest.code());
+            serviceResponse = authService.loginPatientWithTotp(loginRequest.email(), loginRequest.code());
         } else if ("DOCTOR".equalsIgnoreCase(userType)) {
-            response = authService.loginDoctorWithTotp(loginRequest.email(), loginRequest.code());
+            serviceResponse = authService.loginDoctorWithTotp(loginRequest.email(), loginRequest.code());
         } else {
             throw new RuntimeException("Invalid user type. Must be PATIENT or DOCTOR");
         }
 
-        return ResponseEntity.ok(response);
+        ResponseCookie jwtCookie = ResponseCookie.from("jwtToken", serviceResponse.token())
+                .httpOnly(true)                             // Blocks Javascript access (blocks XSS)
+                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
+                .path("/")                                  // Available across all application routes
+                .maxAge(Duration.ofMillis(expirationMs))    // Expiry matching JWT (24 hours in seconds)
+                .sameSite("Lax")                            // Lax protects against CSRF while allowing navigation redirection
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(serviceResponse.authResponse());
+    }
+
+    /**
+     * Logout endpoint to clear the jwtToken HTTP-only cookie
+     * @return Success message response
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout() {
+        ResponseCookie deleteCookie = ResponseCookie.from("jwtToken", "")
+                .httpOnly(true)
+                .secure(!env.acceptsProfiles(Profiles.of("dev"))) // set to false in dev profile
+                .path("/")
+                .maxAge(0) // 0 tells the browser to immediately delete the cookie
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+                .body(Map.of("message", "Logged out successfully"));
     }
 
     // ============================================

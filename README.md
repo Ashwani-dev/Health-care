@@ -192,6 +192,7 @@ For complete TOTP documentation, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.
 - `POST /api/auth/doctor/login` - Doctor login (traditional)
 - `POST /api/auth/login/password?userType=PATIENT|DOCTOR` - Universal password login
 - `POST /api/auth/login/totp?userType=PATIENT|DOCTOR` - Login with TOTP/2FA code
+- `POST /api/auth/logout` - Logout (clears JWT cookie)
 - `POST /api/auth/totp/setup` - Setup TOTP/2FA (requires authentication)
 - `POST /api/auth/totp/confirm` - Confirm TOTP setup with verification code
 - `POST /api/auth/totp/disable` - Disable TOTP/2FA (requires authentication)

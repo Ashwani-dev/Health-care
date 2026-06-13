@@ -1,6 +1,7 @@
 package com.ashwani.HealthCare.Service.Auth;
 
 import com.ashwani.HealthCare.DTO.Authentication.AuthResponse;
+import com.ashwani.HealthCare.DTO.Authentication.ServiceAuthResponse;
 import com.ashwani.HealthCare.Entity.Doctor;
 import com.ashwani.HealthCare.Entity.Patient;
 import com.ashwani.HealthCare.Enums.LoginMethod;
@@ -54,7 +55,7 @@ public class AuthService {
     }
 
 
-    public AuthResponse loginPatient(String email, String password) {
+    public ServiceAuthResponse loginPatient(String email, String password) {
         Patient patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", email));
 
@@ -68,7 +69,10 @@ public class AuthService {
         }
         String token = jwtUtility.generateToken(patient.getId().toString(), "PATIENT");
 
-        return new AuthResponse(true, token, "PATIENT", patient.getId(), patient.getLoginMethod().name());
+        return new ServiceAuthResponse(
+            new AuthResponse(true, "PATIENT", patient.getId(), patient.getLoginMethod().name()),
+            token
+        );
     }
 
     public String registerDoctor(Doctor doctor) {
@@ -91,7 +95,7 @@ public class AuthService {
         return jwtUtility.generateToken(savedDoctor.getId().toString(), "DOCTOR");
     }
 
-    public AuthResponse loginDoctor(String email, String password) {
+    public ServiceAuthResponse loginDoctor(String email, String password) {
         Doctor doctor = doctorRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", email));
 
@@ -105,13 +109,16 @@ public class AuthService {
         }
         String token = jwtUtility.generateToken(doctor.getId().toString(), "DOCTOR");
 
-        return new AuthResponse(true, token, "DOCTOR", doctor.getId(), doctor.getLoginMethod().name());
+        return new ServiceAuthResponse(
+            new AuthResponse(true, "DOCTOR", doctor.getId(), doctor.getLoginMethod().name()),
+            token
+        );
     }
 
     /**
      * Login patient with TOTP code
      */
-    public AuthResponse loginPatientWithTotp(String email, String code) {
+    public ServiceAuthResponse loginPatientWithTotp(String email, String code) {
         Patient patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient", email));
 
@@ -124,13 +131,16 @@ public class AuthService {
         }
 
         String token = jwtUtility.generateToken(patient.getId().toString(), "PATIENT");
-        return new AuthResponse(true, token, "PATIENT", patient.getId(), patient.getLoginMethod().name());
+        return new ServiceAuthResponse(
+            new AuthResponse(true, "PATIENT", patient.getId(), patient.getLoginMethod().name()),
+            token
+        );
     }
 
     /**
      * Login doctor with TOTP code
      */
-    public AuthResponse loginDoctorWithTotp(String email, String code) {
+    public ServiceAuthResponse loginDoctorWithTotp(String email, String code) {
         Doctor doctor = doctorRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor", email));
 
@@ -143,6 +153,9 @@ public class AuthService {
         }
 
         String token = jwtUtility.generateToken(doctor.getId().toString(), "DOCTOR");
-        return new AuthResponse(true, token, "DOCTOR", doctor.getId(), doctor.getLoginMethod().name());
+        return new ServiceAuthResponse(
+            new AuthResponse(true, "DOCTOR", doctor.getId(), doctor.getLoginMethod().name()),
+            token
+        );
     }
 }

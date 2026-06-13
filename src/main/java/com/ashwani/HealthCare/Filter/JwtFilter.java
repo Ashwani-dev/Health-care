@@ -3,6 +3,7 @@ import com.ashwani.HealthCare.Utility.JWTUtility;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.WebUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,17 +48,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 String userId = claims.getSubject();
                 String role = claims.get("role", String.class);
 
-                /*
-                // Validate role against endpoint
-                if (isDoctorEndpoint(request) && !"DOCTOR".equals(role)) {
-                    throw new AccessDeniedException("Doctor access required");
-                }
-
-                if (isPatientEndpoint(request) && !"PATIENT".equals(role)) {
-                    throw new AccessDeniedException("Patient access required");
-                }
-                 */
-
                 UserDetails userDetails = createUserDetails(userId, role);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -86,6 +77,13 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
+        // 1. Try to extract JWT from HttpOnly Cookie
+        Cookie cookie = WebUtils.getCookie(request, "jwtToken");
+        if (cookie != null) {
+            return cookie.getValue();
+        }
+
+        // 2. Fallback to Authorization Header
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);

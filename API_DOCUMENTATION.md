@@ -226,7 +226,6 @@ Universal password login endpoint for both patients and doctors.
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "role": "PATIENT",
   "userId": 1,
   "loginMethod": "PASSWORD"
@@ -257,7 +256,6 @@ Universal TOTP login endpoint for both patients and doctors using authenticator 
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "role": "DOCTOR",
   "userId": 5,
   "loginMethod": "TOTP"
@@ -267,6 +265,23 @@ Universal TOTP login endpoint for both patients and doctors using authenticator 
 **Error Responses:**
 - `400 Bad Request` - TOTP_NOT_ENABLED: "TOTP is not enabled for this account"
 - `401 Unauthorized` - INVALID_TOTP_CODE: "Invalid TOTP code"
+
+### Logout (Universal)
+**POST** `/api/auth/logout`
+
+Clear the authenticated user's session by deleting the `jwtToken` HTTP-only cookie.
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Set-Cookie Header:**
+```
+jwtToken=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; Secure; SameSite=Lax
+```
 
 ### Setup TOTP
 **POST** `/api/auth/totp/setup`
